@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps MCP Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .demo-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #3367D6;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Google Maps MCP Demo</h1>
+    
+    <div class="demo-section">
+        <h2>Geocoding</h2>
+        <p>Convert an address to coordinates</p>
+        
+        <div class="input-group">
+            <label for="address">Address:</label>
+            <input type="text" id="address" placeholder="Enter an address (e.g., Sydney Opera House, Australia)">
+        </div>
+        
+        <button onclick="geocodeAddress()">Get Coordinates</button>
+        
+        <div id="geocode-result" class="result">Results will appear here...</div>
+    </div>
+    
+    <div class="demo-section">
+        <h2>Reverse Geocoding</h2>
+        <p>Convert coordinates to an address</p>
+        
+        <div class="input-group">
+            <label for="latitude">Latitude:</label>
+            <input type="text" id="latitude" placeholder="Enter latitude (e.g., -33.8567844)">
+        </div>
+        
+        <div class="input-group">
+            <label for="longitude">Longitude:</label>
+            <input type="text" id="longitude" placeholder="Enter longitude (e.g., 151.2152967)">
+        </div>
+        
+        <button onclick="reverseGeocode()">Get Address</button>
+        
+        <div id="reverse-geocode-result" class="result">Results will appear here...</div>
+    </div>
+    
+    <div class="demo-section">
+        <h2>Place Search</h2>
+        <p>Search for places using a text query</p>
+        
+        <div class="input-group">
+            <label for="place-query">Search Query:</label>
+            <input type="text" id="place-query" placeholder="Enter a search query (e.g., restaurants in Sydney)">
+        </div>
+        
+        <button onclick="searchPlaces()">Search Places</button>
+        
+        <div id="place-search-result" class="result">Results will appear here...</div>
+    </div>
+    
+    <div class="demo-section">
+        <h2>Directions</h2>
+        <p>Get directions between two points</p>
+        
+        <div class="input-group">
+            <label for="origin">Origin:</label>
+            <input type="text" id="origin" placeholder="Enter origin (e.g., Sydney Opera House)">
+        </div>
+        
+        <div class="input-group">
+            <label for="destination">Destination:</label>
+            <input type="text" id="destination" placeholder="Enter destination (e.g., Bondi Beach)">
+        </div>
+        
+        <div class="input-group">
+            <label for="mode">Travel Mode:</label>
+            <select id="mode">
+                <option value="driving">Driving</option>
+                <option value="walking">Walking</option>
+                <option value="bicycling">Bicycling</option>
+                <option value="transit">Transit</option>
+            </select>
+        </div>
+        
+        <button onclick="getDirections()">Get Directions</button>
+        
+        <div id="directions-result" class="result">Results will appear here...</div>
+    </div>
+
+    <script>
+        // Helper function to display results
+        function displayResult(elementId, data, error = false) {
+            const element = document.getElementById(elementId);
+            if (error) {
+                element.innerHTML = `<span class="error">Error: ${data}</span>`;
+            } else {
+                element.innerHTML = JSON.stringify(data, null, 2);
+            }
+        }
+
+        // Geocoding: Convert address to coordinates
+        async function geocodeAddress() {
+            const address = document.getElementById('address').value;
+            if (!address) {
+                displayResult('geocode-result', 'Please enter an address', true);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/maps_geocode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ address })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResult('geocode-result', data);
+            } catch (error) {
+                displayResult('geocode-result', `Failed to geocode address: ${error.message}`, true);
+                console.error('Geocoding error:', error);
+            }
+        }
+
+        // Reverse Geocoding: Convert coordinates to address
+        async function reverseGeocode() {
+            const latitude = parseFloat(document.getElementById('latitude').value);
+            const longitude = parseFloat(document.getElementById('longitude').value);
+
+            if (isNaN(latitude) || isNaN(longitude)) {
+                displayResult('reverse-geocode-result', 'Please enter valid coordinates', true);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/maps_reverse_geocode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ latitude, longitude })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResult('reverse-geocode-result', data);
+            } catch (error) {
+                displayResult('reverse-geocode-result', `Failed to reverse geocode: ${error.message}`, true);
+                console.error('Reverse geocoding error:', error);
+            }
+        }
+
+        // Place Search: Search for places
+        async function searchPlaces() {
+            const query = document.getElementById('place-query').value;
+            if (!query) {
+                displayResult('place-search-result', 'Please enter a search query', true);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/maps_search_places', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResult('place-search-result', data);
+            } catch (error) {
+                displayResult('place-search-result', `Failed to search places: ${error.message}`, true);
+                console.error('Place search error:', error);
+            }
+        }
+
+        // Directions: Get directions between points
+        async function getDirections() {
+            const origin = document.getElementById('origin').value;
+            const destination = document.getElementById('destination').value;
+            const mode = document.getElementById('mode').value;
+
+            if (!origin || !destination) {
+                displayResult('directions-result', 'Please enter both origin and destination', true);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/maps_directions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ origin, destination, mode })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResult('directions-result', data);
+            } catch (error) {
+                displayResult('directions-result', `Failed to get directions: ${error.message}`, true);
+                console.error('Directions error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
