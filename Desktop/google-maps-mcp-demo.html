@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps MCP Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        h2 {
+            color: #0066cc;
+            margin-top: 0;
+        }
+        pre {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .tool-description {
+            margin-bottom: 15px;
+        }
+        .example {
+            margin-top: 15px;
+        }
+        .example-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Google Maps MCP Server Demo</h1>
+    
+    <div class="section">
+        <h2>Overview</h2>
+        <p>
+            This demo showcases the capabilities of the Google Maps MCP server, which provides tools for geocoding, reverse geocoding, 
+            place search, directions, and more. The server is integrated with Claude using the Model Context Protocol (MCP).
+        </p>
+    </div>
+
+    <div class="section">
+        <h2>1. Geocoding</h2>
+        <div class="tool-description">
+            <p>The <code>maps_geocode</code> tool converts an address into geographic coordinates (latitude and longitude).</p>
+        </div>
+        <div class="example">
+            <div class="example-title">Example: Sydney Opera House, Australia</div>
+            <pre>
+{
+  "location": {
+    "lat": -33.8567844,
+    "lng": 151.2152967
+  },
+  "formatted_address": "Bennelong Point, Sydney NSW 2000, Australia",
+  "place_id": "ChIJ3S-JXmauEmsRUcIaWtf4MzE"
+}
+            </pre>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>2. Reverse Geocoding</h2>
+        <div class="tool-description">
+            <p>The <code>maps_reverse_geocode</code> tool converts geographic coordinates into an address.</p>
+        </div>
+        <div class="example">
+            <div class="example-title">Example: Coordinates of Sydney Opera House</div>
+            <pre>
+{
+  "formatted_address": "75 Castlereagh Street, Sydney NSW 2000, Australia",
+  "place_id": "ChIJB5EajGauEmsRSv7kPQuhpls",
+  "address_components": [
+    {
+      "long_name": "75",
+      "short_name": "75",
+      "types": [
+        "street_number"
+      ]
+    },
+    {
+      "long_name": "Castlereagh Street",
+      "short_name": "Castlereagh Street",
+      "types": [
+        "route"
+      ]
+    },
+    ...
+  ]
+}
+            </pre>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>3. Place Search</h2>
+        <div class="tool-description">
+            <p>The <code>maps_search_places</code> tool searches for places using a text query, optionally within a specified radius of a location.</p>
+        </div>
+        <div class="example">
+            <div class="example-title">Example: Restaurants near Sydney Opera House</div>
+            <pre>
+{
+  "places": [
+    {
+      "name": "Grana",
+      "formatted_address": "Ground Floor/5-7 Young St, Sydney NSW 2000, Australia",
+      "location": {
+        "lat": -33.8625166,
+        "lng": 151.2109494
+      },
+      "place_id": "ChIJvyZ8WvCvEmsRTqM2KE94_aw",
+      "rating": 4.6,
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    {
+      "name": "Aria Restaurant Sydney",
+      "formatted_address": "1 Macquarie St, Sydney NSW 2000, Australia",
+      "location": {
+        "lat": -33.8592041,
+        "lng": 151.2132635
+      },
+      "place_id": "ChIJdxxU1WeuEmsR11c4fswX-Io",
+      "rating": 4.5,
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ]
+    },
+    ...
+  ]
+}
+            </pre>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>4. Directions</h2>
+        <div class="tool-description">
+            <p>The <code>maps_directions</code> tool provides directions between two locations, with options for different travel modes.</p>
+        </div>
+        <div class="example">
+            <div class="example-title">Example: Driving directions from Sydney Opera House to Bondi Beach</div>
+            <pre>
+{
+  "routes": [
+    {
+      "summary": "M1",
+      "distance": {
+        "text": "9.1 km",
+        "value": 9066
+      },
+      "duration": {
+        "text": "17 mins",
+        "value": 1032
+      },
+      "steps": [
+        {
+          "instructions": "Head <b>east</b> on <b>Macquarie St</b>",
+          "distance": {
+            "text": "0.7 km",
+            "value": 737
+          },
+          "duration": {
+            "text": "3 mins",
+            "value": 175
+          },
+          "travel_mode": "DRIVING"
+        },
+        ...
+      ]
+    }
+  ]
+}
+            </pre>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>How to Use</h2>
+        <p>
+            You can use these tools by asking Claude to perform geographic tasks. For example:
+        </p>
+        <ul>
+            <li>"What are the coordinates of the Eiffel Tower?"</li>
+            <li>"What's the address at these coordinates: 40.7128, -74.0060?"</li>
+            <li>"Find restaurants near Times Square, New York."</li>
+            <li>"How do I get from Central Park to the Empire State Building by walking?"</li>
+        </ul>
+    </div>
+</body>
+</html>
