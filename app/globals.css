@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground: 224, 71%, 4%;
+  --background: 0, 0%, 100%;
+  --card: 0, 0%, 100%;
+  --card-foreground: 224, 71%, 4%;
+  --popover: 0, 0%, 100%;
+  --popover-foreground: 224, 71%, 4%;
+  --primary: 210, 100%, 40%;
+  --primary-foreground: 210, 40%, 98%;
+  --secondary: 210, 40%, 96.1%;
+  --secondary-foreground: 222, 47%, 11.2%;
+  --muted: 210, 40%, 96.1%;
+  --muted-foreground: 215, 16%, 47%;
+  --accent: 210, 40%, 96.1%;
+  --accent-foreground: 222, 47%, 11.2%;
+  --destructive: 0, 84%, 60%;
+  --destructive-foreground: 210, 40%, 98%;
+  --border: 214, 32%, 91%;
+  --input: 214, 32%, 91%;
+  --ring: 221, 83%, 53%;
+  --radius: 0.5rem;
+}
+
+* {
+  @apply border-[hsl(var(--border))];
+}
+
+body {
+  @apply bg-background text-foreground;
+}
+
+@layer components {
+  .gradient-text {
+    @apply bg-gradient-to-r from-zenith-600 to-zenith-400 bg-clip-text text-transparent;
+  }
+
+  .gradient-bg {
+    @apply bg-gradient-to-r from-zenith-600 to-zenith-400;
+  }
+
+  .gradient-border {
+    @apply border border-transparent bg-gradient-to-r from-zenith-600 to-zenith-400 bg-clip-border;
+  }
+
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-lg;
+  }
+
+  .glass-effect {
+    @apply bg-white/40 backdrop-blur-md border border-white/20;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1;
+  }
+
+  .shimmer {
+    @apply relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-shimmer before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent;
+  }
+}
