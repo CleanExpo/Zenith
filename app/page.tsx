@@ -1,11 +1,14 @@
-import { Button } from "@/components/ui/button";
+import { Hero, Features, HowItWorks, Testimonials, FAQ, CTA } from "@/components/sections/landing";
 
 export default function HomePage() {
   return (
-    <div>
-      <h1>Hello World!</h1>
-      <p>This is a minimal page.</p>
-      <Button>Click Me</Button>
-    </div>
+    <main className="flex flex-col items-center justify-center">
+      <Hero />
+      <Features />
+      <HowItWorks />
+      <Testimonials />
+      <FAQ />
+      <CTA />
+    </main>
   );
 }
