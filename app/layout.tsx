@@ -1,27 +1,19 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-
-const inter = Inter({ subsets: ["latin"] })
+import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Zenith",
-  description: "AI-Powered Collaboration Platform",
-  icons: {
-    icon: "/favicon.ico",
-  },
-    generator: 'v0.dev'
-}
+  title: 'Zenith SaaS',
+  description: 'Zenith SaaS Application',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>{children}</body>
+      <body>{children}</body>
     </html>
-  )
+  );
 }
