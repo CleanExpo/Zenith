@@ -986,13 +986,4 @@ export class PythonDataAnalysisService extends BaseDataAnalysisService {
               <rect x="10" y="10" width="50" height="100" fill="blue" />
               <rect x="70" y="60" width="50" height="50" fill="blue" />
               <rect x="130" y="30" width="50" height="80" fill="blue" />
-              <rect x="190" y="80" width="50" height="30" fill="blue" />
-            </svg>
-          </div>
-        `,
-        viewUrl: `/visualizations/${id}`,
-        executionTime: 1000 // 1 second
-      };
-      
-      // Cache the visualization result
-      await this.cacheVisualizationResult(visualization
+              <rect x="190" y="80" width="50" height="30" fill
