@@ -1,14 +1,19 @@
 {
-  "name": "google-maps-mcp-demo",
+  "name": "Zenith",
   "version": "1.0.0",
-  "description": "Demo application for Google Maps MCP server",
-  "main": "google-maps-server.js",
   "scripts": {
-    "start": "node google-maps-server.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
-    "@modelcontextprotocol/server-google-maps": "^0.6.2",
-    "body-parser": "^1.20.2",
-    "express": "^4.18.2"
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "eslint": "latest",
+    "eslint-config-next": "latest"
   }
 }
