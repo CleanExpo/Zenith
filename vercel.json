@@ -1,29 +1,24 @@
 {
-  "version": 2,
+"version": 2,
   "builds": [
     {
       "src": "package.json",
       "use": "@vercel/next"
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/"
-    }
-  ],
   "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
-    "STRIPE_SECRET_KEY": "@stripe_secret_key",
-    "STRIPE_WEBHOOK_SECRET": "@stripe_webhook_secret",
-    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@next_public_stripe_publishable_key",
-    "REDIS_URL": "@redis_url",
-    "NEXTAUTH_URL": "@nextauth_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "GOOGLE_CLIENT_ID": "@google_client_id",
-    "GOOGLE_CLIENT_SECRET": "@google_client_secret",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://uqfgdezadpkiadugufbs.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZmdkZXphZHBraWFkdWd1ZmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzOTkzMTYsImV4cCI6MjA2MTk3NTMxNn0.SbBq0HA4HxD6DPMbCwU5Klx0M2FoZx-d9RE-YtQloOs",
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZmdkZXphZHBraWFkdWd1ZmJzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjM5OTMxNiwiZXhwIjoyMDYxOTc1MzE2fQ.pkeqTet6V9Q75lNuJNQ_Rr3AuBQmovp807KSPBd-RT8",
+    "JWT_SECRET": "pBtJxSFEDP028WbREM0s+UDgPlUmuuUCla2ZxTJ09xqaUka1jGYyrXgyonSatZHsGEdHogTMaBg/ERY+VuBhxQ==",
+    "STRIPE_SECRET_KEY": "",
+    "STRIPE_WEBHOOK_SECRET": "",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "",
+    "REDIS_URL": "",
+    "NEXTAUTH_URL": "",
+    "NEXTAUTH_SECRET": "",
+    "GOOGLE_CLIENT_ID": "",
+    "GOOGLE_CLIENT_SECRET": "",
     "NEXT_PUBLIC_APP_NAME": "Zenith"
   }
 }
