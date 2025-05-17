@@ -18,10 +18,21 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          response.cookies.set(name, value, options);
+          try {
+            response.cookies.set(name, value, options);
+          } catch (error) {
+            // If response.cookies.set is called after headers are sent,
+            // it can throw an error. This is less likely in middleware
+            // but good practice to handle.
+            console.error('[Middleware] Error setting cookie:', error);
+          }
         },
         remove(name: string, options: CookieOptions) {
-          response.cookies.set(name, '', options);
+          try {
+            response.cookies.set(name, '', options);
+          } catch (error) {
+            console.error('[Middleware] Error removing cookie:', error);
+          }
         },
       },
     }

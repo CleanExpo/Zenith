@@ -1,147 +1,138 @@
-# Design Document: Zenith SaaS Project
+# Design.md
 
-## 1. System Architecture
+## 1. Project Architecture Analysis
 
-### 1.1. Architecture Blueprint (Initial)
+### Architecture Blueprint
 
-```mermaid
-graph TD
-    subgraph Client-Side (Next.js)
-        AppDir["App Directory"]
-        Components --> AppDir
-        Pages --> AppDir
-        Layouts --> AppDir
-        PublicAssets["Public Assets"]
-        TailwindCSS["Tailwind CSS"]
-    end
+```javascript
+// CLIENT-SIDE (Next.js - App Directory: Zenith/app)
+// ├── App Directory (Zenith/app)
+// │   ├── Components (Zenith/components) - Includes shadcn/ui components and custom components
+// │   ├── Pages (Route Handlers & Page Components within Zenith/app/**)
+// │   └── Layouts (e.g., Zenith/app/layout.tsx)
+// ├── Public Assets (Zenith/public)
+// └── Tailwind CSS (Zenith/tailwind.config.ts, Zenith/app/globals.css)
 
-    subgraph Server-Side
-        SupabaseAPI["Supabase API"]
-        SupabaseDB["Database (PostgreSQL)"] --> SupabaseAPI
-        SupabaseAuth["Auth"] --> SupabaseAPI
+// SERVER-SIDE
+// ├── Supabase API Integration
+// │   ├── Database (PostgreSQL) - Schema defined in supabase_schema.sql (or managed via Supabase UI/migrations)
+// │   └── Auth - Integrated via Supabase client libraries
+// ├── Stripe API Integration (e.g., Zenith/app/stripe/callback/route.ts)
+// ├── Redis Cache (e.g., Zenith/lib/utils/redis.ts - to be created)
+// ├── Middleware (e.g., Zenith/middleware.ts)
+// │   ├── Auth
+// │   └── Error handling
+// └── API Routes (Next.js Route Handlers in Zenith/app/api/**)
 
-        StripeAPI["Stripe API"]
-        RedisCache["Redis Cache"]
-
-        Middleware["Middleware"]
-        AuthMiddleware["Auth Middleware"] --> Middleware
-        ErrorHandlingMiddleware["Error Handling Middleware"] --> Middleware
-
-        APIRoutes["API Routes (Next.js)"]
-    end
-
-    subgraph Infrastructure
-        Vercel["Vercel Deployment"]
-        EnvVars["Environment Variables"]
-        Monitoring["Monitoring Tools"]
-        BuildSystem["Build System (Next.js)"]
-    end
-
-    AppDir --> APIRoutes
-    APIRoutes --> SupabaseAPI
-    APIRoutes --> StripeAPI
-    APIRoutes --> RedisCache
-    AppDir --> Middleware
+// INFRASTRUCTURE
+// ├── Vercel Deployment
+// ├── Environment Variables (.env.local, .env.example)
+// ├── Monitoring Tools (To be defined)
+// └── Build System (Next.js/Vercel)
 ```
 
-### 1.2. Component Relationship Mappings (Initial)
+## 2. Continuous API Integration Framework
 
-#### Frontend Components
-*   **Auth:** `src/components/auth/` (e.g., Login, Signup, Profile forms/pages)
-*   **Error Display:** `src/components/common/ErrorDisplay.tsx`
-*   **Landing Page:** `src/components/sections/landing/` (and `src/app/page.tsx`)
-*   **Dashboard:** `src/app/dashboard/page.tsx` (and related components in `src/components/dashboard/`)
-*   **(More to be defined based on features)**
+- __Persistent Supabase Client (Server-side)__: `Zenith/lib/supabase/server.ts`
+- __Supabase Client (Client-side)__: `Zenith/lib/supabase/client.ts`
+- __Stripe Integration__: Example path `Zenith/app/stripe/callback/route.ts` (actual implementation to follow Stripe best practices)
+- __Redis Connection Pooling__: To be created at `Zenith/lib/utils/redis.ts`
+- __Error Handling Middleware/Utilities__: To be created/enhanced, e.g., `Zenith/lib/utils/errorHandler.ts`
 
-#### Backend Components (Conceptual within Next.js API Routes & Libs)
-*   **Database Models/Interactions:** `src/lib/db/models/` (or directly via Supabase client)
-*   **Supabase Integration:** `src/lib/supabase/` (client setup, specific queries)
-*   **Stripe Integration:** `src/app/api/stripe/` (webhooks, payment intent creation, etc.)
-*   **Middleware:** `src/middleware.ts` (for auth, logging, etc.)
+## 3. Database Schema
 
-## 2. Data Flow Visualizations
-
-### 2.1. Initial Data Flow (User Request to Database)
-```mermaid
-sequenceDiagram
-    participant User
-    participant Client (Next.js Frontend)
-    participant APIRoutes (Next.js Backend)
-    participant SupabaseClient
-    participant PostgreSQLDB
-    participant RedisCache
-
-    User->>Client: Interacts with UI (e.g., submits form)
-    Client->>APIRoutes: Makes API Request
-    APIRoutes->>SupabaseClient: Calls Supabase function (e.g., to query/mutate data)
-    alt Data in Cache?
-        APIRoutes->>RedisCache: Check Cache
-        RedisCache-->>APIRoutes: Return Cached Data
-    else Data not in Cache or Write Operation
-        SupabaseClient->>PostgreSQLDB: Executes Query/Mutation
-        PostgreSQLDB-->>SupabaseClient: Returns Data/Status
-        SupabaseClient-->>APIRoutes: Returns Data/Status
-        APIRoutes->>RedisCache: Update Cache (if applicable)
-    end
-    APIRoutes-->>Client: Sends API Response
-    Client->>User: Updates UI
-```
-
-## 3. API Connection Framework (Planned)
-
-*   **Persistent Supabase Client:** Initialize in `src/lib/supabase/server.ts` (for server components/actions) and `src/lib/supabase/client.ts` (for client components).
-*   **Stripe Integration:** Server-side SDK initialization for API routes (e.g., `src/app/api/stripe/callback/route.ts` or similar for handling webhooks and creating checkouts).
-*   **Redis Connection Pooling:** To be implemented in `src/lib/utils/redis.ts`.
-*   **Error Handling Middleware:** Centralized error handling in `src/lib/utils/errorHandler.ts` and potentially Next.js middleware.
-*   **API Client for Frontend:** (To be created, e.g. using `fetch` or a library like `axios` or `SWR`/`React Query` for data fetching hooks).
-
-## 4. Database Schema (Initial)
-
-### 4.1. `research_projects` Table
+### Current Schema (Example from initial plan - actual schema in Supabase)
 ```sql
+-- This is an example. The actual schema resides in the Supabase project.
+-- Migrations should be handled via Supabase mechanisms or a migration tool.
+
 CREATE TABLE research_projects (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES auth.users(id) NOT NULL, -- Assuming Supabase Auth
-    title TEXT NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE, -- Example linkage to auth users
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Policies for RLS (Row Level Security) will be crucial
--- Example:
--- CREATE POLICY "Users can view their own projects."
--- ON research_projects FOR SELECT
--- USING (auth.uid() = user_id);
-
--- CREATE POLICY "Users can insert their own projects."
--- ON research_projects FOR INSERT
--- WITH CHECK (auth.uid() = user_id);
+-- Policies for RLS (Row Level Security) would be defined here, e.g.:
+-- CREATE POLICY "Enable read access for authenticated users" ON research_projects FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "Enable insert for owning user" ON research_projects FOR INSERT WITH CHECK (auth.uid() = user_id);
 ```
-*(Further tables and relationships to be defined based on application features.)*
 
-## 5. UI Architecture Planning
+### Data Flow Diagram (Conceptual)
+```
+[User Interaction (Browser)] --> [Next.js Frontend Components]
+        |                                 ^
+        |                                 | (API Calls)
+        v                                 |
+[Next.js API Routes (Backend)] ----> [Supabase Client (server.ts)] ----> [Supabase (PostgreSQL DB & Auth)]
+        |                                                                     ^
+        |                                                                     | (Cache Read/Write)
+        +------------------------------------------------------------------> [Redis Cache (redis.ts)]
+        |
+        +------------------------------------------------------------------> [Stripe API]
 
-*   **UI-MCP for shadcn/ui:** (Design pending - will define component registration, state management integration).
-*   **Theme Management:** Leverage `next-themes` for light/dark modes, integrated with shadcn/ui theming.
-*   **Hook Implementation:** Custom React hooks for reusable logic (e.g., data fetching, form handling).
+```
+
+## 4. Component Mapping (Initial High-Level)
+
+### Frontend Components
+- __Authentication__:
+  - Login Page (`Zenith/app/auth/login/page.tsx`)
+  - Signup Page (`Zenith/app/auth/signup/page.tsx`)
+  - Auth Forms/Buttons (within `Zenith/components/auth/`)
+- __Common UI / Shared Components__:
+  - Layout (`Zenith/app/layout.tsx`)
+  - Navigation (To be created, e.g., `Zenith/components/layout/Navbar.tsx`)
+  - Footer (To be created, e.g., `Zenith/components/layout/Footer.tsx`)
+  - Error Display (`Zenith/components/common/ErrorDisplay.tsx` - if exists, or to be created)
+  - shadcn/ui components (e.g. `Zenith/components/ui/calendar.tsx`, `Zenith/components/ui/pagination.tsx`, and others to be added)
+- __Feature-Specific Components__:
+  - Landing Page Sections (`Zenith/components/sections/landing/` - if exists, or to be created)
+  - Dashboard (`Zenith/app/dashboard/page.tsx` and related components in `Zenith/components/dashboard/`)
+  - Research Projects Display/Management (e.g., components for `Zenith/app/api/research-projects/route.ts`)
+
+### Backend Components (Logical)
+- __Database Models/Types__: `Zenith/lib/database.types.ts` (auto-generated or manually defined based on Supabase schema)
+- __Supabase Integration Logic__:
+  - Server-side: `Zenith/lib/supabase/server.ts`
+  - Client-side: `Zenith/lib/supabase/client.ts`
+- __Stripe Integration Logic__: Route handlers (e.g., `Zenith/app/stripe/**`) and utility functions.
+- __Redis Integration Logic__: `Zenith/lib/utils/redis.ts` (to be created)
+- __Middleware__: `Zenith/middleware.ts` (for auth, request processing, etc.)
+- __API Route Handlers__: Located in `Zenith/app/api/**` (e.g., `Zenith/app/api/research-projects/route.ts`)
+
+## 5. UI Architecture Planning (shadcn/ui Focus)
+
+### UI-MCP (UI Management Context Protocol/Plan)
+- __Purpose__: To systematically manage the integration, state, and theming of shadcn/ui components.
+- __Component Registration & Inventory__:
+  - `Zenith/ShadCN-context.md`: This file will serve as the central inventory for all shadcn/ui components used in the project.
+  - It will list each component, its installation command (as per Context7), version, and purpose within the application.
+  - Installation will be done via CLI: `npx shadcn-ui@latest add [component-name]`
+- __Theming__:
+  - Leverage Tailwind CSS for theming, as shadcn/ui is built on top of it.
+  - `Zenith/tailwind.config.ts` and `Zenith/app/globals.css` will define base styles, themes (light/dark if implemented), and custom utility classes.
+  - shadcn/ui theming variables (CSS variables) will be configured as per shadcn/ui documentation, typically in `globals.css`.
+- __State Management for UI Components__:
+  - Primarily use React's built-in state (useState, useReducer) and context (useContext) for local and shared component state.
+  - For more complex global state, consider Zustand or Jotai if needed, keeping it lightweight.
+- __Hook Implementation__:
+  - Custom React hooks (`Zenith/hooks/` directory - to be created) will be used to encapsulate reusable UI logic, data fetching related to UI, and interactions with shadcn/ui components where necessary.
+  - Example: `useDataTable.ts` for managing state and logic for a shadcn/ui data table.
+- __Directory Structure for UI Components__:
+  - shadcn/ui components: `Zenith/components/ui/` (default location after `npx shadcn-ui add`)
+  - Custom components built using shadcn/ui or other elements: `Zenith/components/custom/` (or feature-specific directories like `Zenith/components/dashboard/`)
 
 ## 6. SaaS Infrastructure Planning (High-Level)
+- __Cloud Provider__: Vercel (for Next.js deployment and serverless functions)
+- __Database__: Supabase (PostgreSQL)
+- __Authentication__: Supabase Auth (with potential for Google OAuth, etc.)
+- __Caching__: Redis (e.g., Upstash Redis or self-managed)
+- __Payment Processing__: Stripe
+- __Monitoring & Logging__: Vercel Analytics, Supabase logging, and potentially a third-party service (e.g., Sentry, Logtail) for more detailed insights.
+- __Multi-tenancy__: If required, this would involve schema changes (e.g., `organization_id` in tables) and RLS policies in Supabase. (Not in immediate scope unless specified).
+- __Backup & Disaster Recovery__: Supabase handles database backups. Vercel handles deployment rollbacks.
 
-*   **Scalability:** Vercel serverless functions for backend, Supabase for scalable DB.
-*   **Data Persistence:** PostgreSQL via Supabase. Redis for caching.
-*   **Authentication & Authorization:** Supabase Auth, RLS policies.
-*   **Multi-tenancy:** (To be designed if required - e.g., schema per tenant, or row-level tenant IDs).
-*   **Monitoring & Logging:** Vercel Analytics, Supabase logs, custom logging solution.
-*   **Backup & Disaster Recovery:** Supabase automated backups. Vercel infrastructure resilience.
-
-## 7. Required Technologies & Libraries (Summary)
-*   Next.js, React, TypeScript
-*   Tailwind CSS, shadcn/ui, `next-themes`
-*   Supabase (DB, Auth)
-*   Stripe (Payments)
-*   Redis (Caching)
-*   (Others as identified in Research.md)
-
-## 8. Development Milestones & Dependency Chains
-(To be defined as features are fleshed out.)
+*(This document will be updated as the project progresses and more detailed design decisions are made.)*

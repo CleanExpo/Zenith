@@ -16,7 +16,7 @@ const config: Config = {
     },
   },
   plugins: [
-    require('tw-animate-css'), // Added for shadcn/ui animations
+    // require('tailwindcss-animate'), // Temporarily commented out for testing
     // You can add Tailwind CSS plugins here
     // For example, require('@tailwindcss/forms') or require('@tailwindcss/typography')
   ],
