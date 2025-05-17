@@ -1,61 +1,86 @@
-# ShadCN-context.md
+# ShadCN UI Components Inventory
 
-## shadcn/ui Component Inventory
+This document tracks the shadcn/ui components installed and used in the Zenith project.
 
-This document lists all shadcn/ui components integrated into the Zenith project. It serves as a central reference for:
-- Installed components
-- Their installation commands (as per Context7)
-- Versions (if specified by Context7 or installation)
-- Purpose/Usage within the application
+## Installed Components
 
-*(CRITICAL NOTE: All information regarding shadcn/ui components, including installation commands, versions, and usage details, will strictly adhere to the output from the Context7 MCP tool and project requirements. This file will be updated dynamically as components are researched and added.)*
+| Component | Status | Usage |
+|-----------|--------|-------|
+| Form | ✅ Installed | Used for form validation and handling in project creation |
+| Popover | ✅ Installed | Used for date picker in project forms |
+| Select | ✅ Installed | Used for priority selection in project forms |
+| Calendar | ✅ Installed | Used for date selection in project forms |
+| Button | ✅ Installed | Used throughout the application for actions |
+| Input | ✅ Installed | Used for text input fields |
+| Textarea | ✅ Installed | Used for multi-line text input |
+| Card | ✅ Installed | Used for containing form elements and content |
+| Label | ✅ Installed | Used for form field labels |
+| Pagination | ✅ Installed | Used for paginating through lists |
+| Sonner | ✅ Installed | Used for toast notifications throughout the app |
+| Alert | ✅ Installed | Used for displaying important messages to users |
+| Skeleton | ✅ Installed | Used for loading states and placeholders |
+| LoadingSkeleton | ✅ Installed | Custom component built on top of Skeleton for standardized loading states |
+| Dialog | ✅ Installed | Used for modal dialogs and user interactions |
+| Tooltip | ✅ Installed | Used for contextual information and form field guidance |
+| DropdownMenu | ✅ Installed | Used for navigation menus and user interface options |
+| ThemeProvider | ✅ Installed | Used for theme management and dark/light mode support |
+| SkipLink | ✅ Installed | Used for accessibility to skip to main content |
+| VisuallyHidden | ✅ Installed | Used for screen reader content that's visually hidden |
+| AriaLive | ✅ Installed | Used for announcing dynamic content to screen readers |
+| LoadingIndicator | ✅ Installed | Used for showing loading states with accessibility support |
+| ErrorMessage | ✅ Installed | Used for displaying error messages with proper accessibility |
 
----
+## Enhanced Components
 
-### Core/Base Components (Example - To be verified with Context7)
-*This section is for components that might be foundational or installed during initial setup. Actual components and commands need verification.*
+### Accessibility Components
 
-- **Button**
-  - **Installation Command**: `npx shadcn@latest add button`
-  - **Purpose**: Standard button component for user interactions.
-  - **Status**: Installed.
-  - **Version**: (Managed by shadcn/ui CLI - typically latest compatible)
-  - **File Path**: `Zenith/components/ui/button.tsx`
+The project includes several custom accessibility components:
 
-- **Input**
-  - **Installation Command**: `npx shadcn@latest add input`
-  - **Purpose**: Standard input field for forms.
-  - **Status**: Installed.
-  - **Version**: (Managed by shadcn/ui CLI - typically latest compatible)
-  - **File Path**: `Zenith/components/ui/input.tsx`
+1. **SkipLink**: Allows keyboard users to bypass navigation and jump directly to the main content
+2. **VisuallyHidden**: Hides content visually while keeping it accessible to screen readers
+3. **AriaLive**: Announces dynamic content changes to screen readers using ARIA live regions
+4. **ErrorMessage**: Displays error messages with appropriate styling and screen reader announcements
+5. **LoadingIndicator**: Provides visual feedback during loading states with proper accessibility support
 
-- **Label**
-  - **Installation Command**: `npx shadcn@latest add label`
-  - **Purpose**: Displays a label for form elements.
-  - **Status**: Installed.
-  - **Version**: (Managed by shadcn/ui CLI - typically latest compatible)
-  - **File Path**: `Zenith/components/ui/label.tsx`
+### Enhanced Form Implementation
 
-- **Card**
-  - **Installation Command**: `npx shadcn@latest add card`
-  - **Purpose**: Displays a card with header, content, and footer sections.
-  - **Status**: Installed.
-  - **Version**: (Managed by shadcn/ui CLI - typically latest compatible)
-  - **File Path**: `Zenith/components/ui/card.tsx`
+The project includes an enhanced form implementation using shadcn/ui components. This implementation:
 
-- **Textarea**
-  - **Installation Command**: `npx shadcn@latest add textarea`
-  - **Purpose**: Displays a multi-line text input field.
-  - **Status**: Installed.
-  - **Version**: (Managed by shadcn/ui CLI - typically latest compatible)
-  - **File Path**: `Zenith/components/ui/textarea.tsx`
----
+1. Uses the Form component for form state management and validation
+2. Integrates Select component for dropdown selection
+3. Implements Popover and Calendar components for date picking
+4. Provides proper form validation with error messages
+5. Includes loading state indicators during form submission
+6. Uses Sonner for toast notifications on form submission success/failure
+7. Integrates with accessibility components for improved screen reader support
 
-### Application-Specific Components (To be populated)
-*This section will list components chosen for specific features of the Zenith application.*
+### Lazy Loading Implementation
 
-*(No components listed yet. This section will be populated after research and selection.)*
+The project includes a lazy loading implementation for heavy components:
 
----
+1. Uses Next.js dynamic imports for code splitting
+2. Implements a custom `lazyLoad` utility in `lib/utils/lazy.ts`
+3. Provides a standardized loading skeleton component
+4. Uses Suspense boundaries for improved user experience
+5. Optimizes analytics components that are heavy due to chart rendering
 
-Last Updated: 2025-05-11
+## Installation Commands
+
+To install additional shadcn/ui components, use:
+
+```bash
+npx shadcn@latest add [component-name]
+```
+
+## Required Dependencies
+
+The following dependencies are required for the shadcn/ui components:
+
+- tailwindcss-animate
+- date-fns (for Calendar component)
+- lucide-react (for icons)
+- sonner (for toast notifications)
+
+## Theme Customization
+
+The shadcn/ui components use the theme defined in the tailwind.config.ts file. To customize the appearance of components, modify the theme settings in this file.

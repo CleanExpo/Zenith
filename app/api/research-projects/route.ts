@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { logger } from '@/lib/logger'; // Assuming logger is in lib
+import { logger } from '@/lib/logger';
+import { getMockUserId, isDevelopmentEnvironment } from '@/lib/utils/auth';
+import { CachePrefix } from '@/lib/utils/cacheUtils';
+import { EnhancedCachedResearchProjectService } from '@/lib/services/enhancedCachedResearchProjectService';
 
 // Define the type for a research project based on your schema
 // This should ideally align with types generated from your Supabase schema (e.g., database.types.ts)
@@ -13,6 +16,7 @@ interface ResearchProject {
   created_at?: string;
   updated_at?: string;
 }
+
 
 export async function GET(request: Request) {
   const cookieStore = cookies();
@@ -47,27 +51,39 @@ export async function GET(request: Request) {
   );
 
   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError) {
-      logger.error('Error getting session in GET /api/research-projects', { error: sessionError });
-      return NextResponse.json({ error: 'Failed to get session: ' + sessionError.message }, { status: 500 });
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      logger.warn('Unauthorized attempt to access research projects', { error: userError?.message });
+      return NextResponse.json({ error: 'You must be logged in to access research projects.' }, { status: 401 });
     }
     
-    // RLS policies will ensure users only see projects they are allowed to.
-    // If a user is not authenticated, they might see projects allowed by "Enable read access for all users" (USING (true))
-    // If they are authenticated, other policies might apply.
-    const { data, error } = await supabase
-      .from('research_projects')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      logger.error('Error fetching research projects', { error });
+    // Use the enhanced cached service to get all research projects
+    try {
+      // Parse query parameters for pagination
+      const url = new URL(request.url);
+      const page = parseInt(url.searchParams.get('page') || '1');
+      const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
+      
+      // Get filters from query parameters
+      const filters: Record<string, any> = {};
+      url.searchParams.forEach((value, key) => {
+        if (key !== 'page' && key !== 'pageSize') {
+          filters[key] = value;
+        }
+      });
+      
+      const projectsData = await EnhancedCachedResearchProjectService.getProjects(
+        user.id,
+        page,
+        pageSize,
+        Object.keys(filters).length > 0 ? filters : undefined
+      );
+      
+      return NextResponse.json(projectsData);
+    } catch (error: any) {
+      logger.error('Error fetching research projects', { error: error.message, userId: user.id });
       return NextResponse.json({ error: 'Failed to fetch research projects: ' + error.message }, { status: 500 });
     }
-
-    return NextResponse.json(data);
   } catch (e: any) {
     logger.error('Unexpected error in GET /api/research-projects', { error: e.message, stack: e.stack });
     return NextResponse.json({ error: 'An unexpected error occurred: ' + e.message }, { status: 500 });
@@ -108,7 +124,6 @@ export async function POST(request: Request) {
 
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-
     if (userError || !user) {
       logger.warn('Unauthorized attempt to create research project', { error: userError?.message });
       return NextResponse.json({ error: 'You must be logged in to create a research project.' }, { status: 401 });
@@ -122,7 +137,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid request body: Malformed JSON.' }, { status: 400 });
     }
     
-
     if (!projectData.title) {
       return NextResponse.json({ error: 'Title is required.' }, { status: 400 });
     }
@@ -130,23 +144,36 @@ export async function POST(request: Request) {
     const newProject: Omit<ResearchProject, 'id' | 'created_at' | 'updated_at'> = {
       title: projectData.title,
       description: projectData.description,
-      user_id: user.id, // Set the owner to the currently authenticated user
+      user_id: user.id, // Set the owner to the authenticated user
     };
 
-    const { data, error } = await supabase
-      .from('research_projects')
-      .insert(newProject)
-      .select()
-      .single(); // Assuming you want the created project back
-
-    if (error) {
-      logger.error('Error creating research project', { error, userId: user.id, projectTitle: newProject.title });
-      // More specific error handling based on Supabase error codes could be added here
-      // e.g. if (error.code === '23503') // foreign key violation
+    // Use the enhanced cached service to create a new project
+    try {
+      const createdProject = await EnhancedCachedResearchProjectService.createProject(
+        { title: newProject.title, description: newProject.description },
+        user.id
+      );
+      
+      // Fetch the newly created project to return it
+      const project = await EnhancedCachedResearchProjectService.getProjectById(createdProject.id, user.id);
+      
+      if (!project) {
+        // We'll still return success even if we can't fetch the created project
+        return NextResponse.json({ 
+          id: createdProject.id, 
+          title: newProject.title, 
+          description: newProject.description,
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, { status: 201 });
+      }
+      
+      return NextResponse.json(project, { status: 201 });
+    } catch (error: any) {
+      logger.error('Error creating research project', { error: error.message, userId: user.id });
       return NextResponse.json({ error: 'Failed to create research project: ' + error.message }, { status: 500 });
     }
-
-    return NextResponse.json(data, { status: 201 });
   } catch (e: any) {
     logger.error('Unexpected error in POST /api/research-projects', { error: e.message, stack: e.stack });
     return NextResponse.json({ error: 'An unexpected error occurred: ' + e.message }, { status: 500 });

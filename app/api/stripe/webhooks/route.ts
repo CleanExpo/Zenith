@@ -1,8 +1,7 @@
-// Zenith/app/api/stripe/webhooks/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { logger } from '@/lib/logger';
-// import { relevantSupabaseService } from '@/lib/services'; // e.g., to update subscription status
+import { stripeService } from '@/lib/services/stripeService';
 
 let stripe: Stripe | null = null;
 
@@ -60,40 +59,15 @@ export async function POST(req: NextRequest) {
 
   if (relevantEvents.has(event.type)) {
     try {
-      switch (event.type) {
-        case 'checkout.session.completed':
-          const session = event.data.object as Stripe.Checkout.Session;
-          logger.info('Checkout session completed', { sessionId: session.id, customerId: session.customer });
-          // Handle successful checkout: provision service, update subscription status, etc.
-          // Example: await relevantSupabaseService.updateUserSubscription(session.customer, session.subscription);
-          break;
-        
-        case 'invoice.payment_succeeded':
-          const invoice = event.data.object as Stripe.Invoice;
-          logger.info('Invoice payment succeeded', { invoiceId: invoice.id, customerId: invoice.customer });
-          // Handle successful payment: update subscription, grant access, etc.
-          break;
-
-        case 'invoice.payment_failed':
-          const failedInvoice = event.data.object as Stripe.Invoice;
-          logger.warn('Invoice payment failed', { invoiceId: failedInvoice.id, customerId: failedInvoice.customer });
-          // Handle failed payment: notify user, restrict service, etc.
-          break;
-
-        case 'customer.subscription.created':
-        case 'customer.subscription.updated':
-        case 'customer.subscription.deleted':
-          const subscription = event.data.object as Stripe.Subscription;
-          logger.info(`Customer subscription ${event.type}`, { subscriptionId: subscription.id, customerId: subscription.customer, status: subscription.status });
-          // Update subscription status in your database
-          // Example: await relevantSupabaseService.updateSubscriptionStatus(subscription.customer, subscription.status, subscription.id);
-          break;
-        
-        // Add more cases for other relevant events
-
-        default:
-          logger.info('Unhandled relevant Stripe event type', { eventType: event.type });
+      // Process the webhook event using the stripeService
+      const success = await stripeService.processWebhookEvent(event);
+      
+      if (!success) {
+        logger.error('Failed to process webhook event', { eventType: event.type, eventId: event.id });
+        return NextResponse.json({ error: 'Failed to process webhook event.' }, { status: 500 });
       }
+      
+      logger.info('Successfully processed webhook event', { eventType: event.type, eventId: event.id });
     } catch (error: any) {
       logger.error('Error handling Stripe webhook event', { eventType: event.type, error: error.message, stack: error.stack });
       // Return 500 so Stripe retries, but be cautious of infinite retries for non-transient errors.
@@ -105,6 +79,3 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ received: true });
 }
-
-// Note: You'll need to configure this webhook endpoint in your Stripe dashboard.
-// Stripe sends POST requests to this endpoint.

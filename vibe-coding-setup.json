@@ -1,0 +1,76 @@
+{
+  "projectSetup": {
+    "tasks": [
+      "Commit all code regularly after AI interactions.",
+      "Adjust context before each major prompt.",
+      "Run security audits frequently.",
+      "Update ShadCN-context.md when adding new UI components.",
+      "Ensure accessibility compliance for all new components."
+    ],
+    "settings": {
+      "techStack": "Next.js 13+ (App Router), Supabase, Stripe, Redis, shadcn/ui",
+      "documentation": "Always provide the AI with updated documentation.",
+      "projectRules": [
+        "Clearly identify your project's tech stack.",
+        "Commit effective solutions to memory systems (MCP).",
+        "Use standardized snippets for common workflows.",
+        "Follow accessibility guidelines in ACCESSIBILITY.md.",
+        "Maintain proper database schema with RLS policies."
+      ]
+    },
+    "snippets": {
+      "planning": [
+        "Feature Name:",
+        "Tech Stack:",
+        "Task Breakdown:",
+        "Debug & Logging Plan:",
+        "UI/UX Design Notes:",
+        "Accessibility Considerations:"
+      ],
+      "debugLog": "console.log('[DEBUG]:', {variable});",
+      "earlyReturn": "if (condition) { console.warn('Early exit:', reason); return; }",
+      "supabaseServerClient": "const supabase = createServerSupabaseClient();\nconst { data, error } = await supabase.from('table_name').select('*');",
+      "supabaseClientComponent": "'use client';\n\nimport { createClient } from '@/lib/supabase/client';\n\nexport default function Component() {\n  const supabase = createClient();\n  // Component code here\n}",
+      "shadcnComponent": "npx shadcn-ui@latest add component-name",
+      "accessibleComponent": "import { AriaLive } from '@/components/ui/aria-live';\nimport { VisuallyHidden } from '@/components/ui/visually-hidden';\n\nexport default function AccessibleComponent() {\n  // Component code here\n}"
+    },
+    "CLINE": {
+      "instruction": "Initialize your VS Code environment using CLINE with this config file.",
+      "command": "cline init --config vibe-coding-setup.json",
+      "usage": [
+        "CLINE sets tasks, snippets, and settings automatically.",
+        "Use provided tasks and snippets consistently.",
+        "Works alongside existing .clinerules file for SaaS development."
+      ]
+    }
+  },
+  "LLMInstructions": {
+    "promptGuide": [
+      "Explicitly set context using '@' symbol when prompting AI.",
+      "Request multiple AI solutions for complex issues.",
+      "Switch between different LLMs based on the coding task.",
+      "Evaluate AI-generated outputs against defined project standards.",
+      "Include relevant parts of ACCESSIBILITY.md when requesting UI components.",
+      "Reference ShadCN-context.md when working with UI components."
+    ]
+  },
+  "zenithSpecific": {
+    "components": {
+      "ui": "Use shadcn/ui components from ShadCN-context.md",
+      "accessibility": "Follow patterns in ACCESSIBILITY.md",
+      "layout": "Use consistent layout patterns from app/layout.tsx"
+    },
+    "services": {
+      "database": "Use Supabase for database operations",
+      "auth": "Use Supabase Auth for authentication",
+      "payment": "Use Stripe for payment processing",
+      "cache": "Use Redis for caching"
+    },
+    "patterns": {
+      "serverComponents": "Use Server Components for data fetching",
+      "clientComponents": "Use 'use client' directive for interactive components",
+      "api": "Use Route Handlers in app/api/** for API endpoints",
+      "forms": "Use shadcn/ui Form component for form handling"
+    }
+  }
+}

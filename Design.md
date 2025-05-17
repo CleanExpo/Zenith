@@ -105,6 +105,39 @@ CREATE TABLE research_projects (
 
 ## 5. UI Architecture Planning (shadcn/ui Focus)
 
+### Performance Optimization with Lazy Loading
+
+- __Purpose__: To improve application performance by deferring the loading of heavy components until they are needed.
+- __Implementation__:
+  - `Zenith/lib/utils/lazy.ts`: A utility function that wraps Next.js dynamic imports for consistent lazy loading.
+  - `Zenith/components/ui/loading-skeleton.tsx`: A standardized loading skeleton component for use during lazy loading.
+  - `Zenith/components/dashboard/analytics/lazy.ts`: Exports lazy-loaded versions of heavy analytics components.
+- __Benefits__:
+  - Reduced initial bundle size and faster page loads
+  - Improved performance for users on slower connections
+  - Better user experience with standardized loading states
+  - Optimized rendering of data visualization components
+- __Usage Pattern__:
+  ```tsx
+  // 1. Define lazy components in a dedicated file
+  // components/feature/lazy.ts
+  import { lazyLoad } from '@/lib/utils/lazy';
+  export const LazyHeavyComponent = lazyLoad(() => import('./HeavyComponent'));
+
+  // 2. Use with Suspense in parent components
+  import { Suspense } from 'react';
+  import { LazyHeavyComponent } from './lazy';
+  import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
+
+  function ParentComponent() {
+    return (
+      <Suspense fallback={<LoadingSkeleton />}>
+        <LazyHeavyComponent />
+      </Suspense>
+    );
+  }
+  ```
+
 ### UI-MCP (UI Management Context Protocol/Plan)
 - __Purpose__: To systematically manage the integration, state, and theming of shadcn/ui components.
 - __Component Registration & Inventory__:
