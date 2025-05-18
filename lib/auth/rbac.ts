@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import { createClient as createServerClient } from '@/lib/supabase/server';
+import { createClient as createServerClient } from '@/lib/supabase/client'
 import { Permission, UserRole, ROLE_PERMISSIONS } from './types';
 import { cookies } from 'next/headers';
 import { cache } from 'react';

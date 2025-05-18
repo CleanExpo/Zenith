@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import { createClient as createServerClient } from '@/lib/supabase/server';
+import { createClient as createServerClient } from '@/lib/supabase/client'
 import { UserRole, Permission } from './types';
 import { logger } from '@/lib/logger';
 
@@ -751,3 +751,4 @@ export async function hasAnyTeamRoleServer(
     return false;
   }
 }
+

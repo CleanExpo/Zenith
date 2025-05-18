@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client'
 import { UserRole, Permission } from '@/lib/auth/types';
 import { hasTeamPermissionServer, hasTeamRoleServer, hasAnyTeamRoleServer } from '@/lib/auth/teams';
 import { logger } from '@/lib/logger';

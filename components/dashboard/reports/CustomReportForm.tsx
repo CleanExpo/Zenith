@@ -328,7 +328,7 @@ export default function CustomReportForm({
                         selected={field.value}
                         onSelect={field.onChange}
                         disabled={(date) =>
-                          date > new Date() || (form.getValues('endDate') ? date > form.getValues('endDate') : false)
+                          date > new Date() || (form.getValues('endDate') as any ? date > form.getValues('endDate') as any : false)
                         }
                         initialFocus
                       />

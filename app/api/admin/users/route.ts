@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withRole } from '@/lib/auth/middleware';
 import { UserRole, Permission } from '@/lib/auth/types';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client'
 import { updateUserRoleServer, createAuditLogServer } from '@/lib/auth/rbac';
 
 /**
@@ -133,3 +133,4 @@ export async function DELETE(req: NextRequest) {
     }
   });
 }
+
