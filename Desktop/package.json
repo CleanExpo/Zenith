@@ -8,6 +8,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@googlemaps/google-maps-services-js": "^3.4.1",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"
