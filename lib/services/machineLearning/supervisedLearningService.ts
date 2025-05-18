@@ -5,7 +5,6 @@
  */
 
 import { logger } from '@/lib/logger';
-import { redisClient } from '@/lib/utils/redis';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -281,8 +280,6 @@ export class SupervisedLearningService {
       
       // Invalidate the dataset cache
       const cacheKey = this.getDatasetCacheKey(id);
-      if (typeof window === 'undefined' && redisClient) {
-        await redisClient.del(cacheKey);
       }
       
       logger.info('Deleted dataset', {
@@ -535,8 +532,6 @@ export class SupervisedLearningService {
       
       // Invalidate the model cache
       const cacheKey = this.getModelCacheKey(id);
-      if (typeof window === 'undefined' && redisClient) {
-        await redisClient.del(cacheKey);
       }
       
       logger.info('Deleted model', {
@@ -751,9 +746,7 @@ export class SupervisedLearningService {
    * @param dataset The dataset to cache
    */
   private async cacheDataset(dataset: Dataset): Promise<void> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getDatasetCacheKey(dataset.id);
-      await redisClient.set(cacheKey, JSON.stringify(dataset), 'EX', 3600); // 1 hour
     }
   }
   
@@ -763,9 +756,7 @@ export class SupervisedLearningService {
    * @returns The cached dataset, or null if not found
    */
   private async getCachedDataset(id: string): Promise<Dataset | null> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getDatasetCacheKey(id);
-      const cachedData = await redisClient.get(cacheKey);
       
       if (cachedData) {
         return JSON.parse(cachedData) as Dataset;
@@ -780,9 +771,7 @@ export class SupervisedLearningService {
    * @param model The model to cache
    */
   private async cacheModel(model: Model): Promise<void> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getModelCacheKey(model.id);
-      await redisClient.set(cacheKey, JSON.stringify(model), 'EX', 3600); // 1 hour
     }
   }
   
@@ -792,9 +781,7 @@ export class SupervisedLearningService {
    * @returns The cached model, or null if not found
    */
   private async getCachedModel(id: string): Promise<Model | null> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getModelCacheKey(id);
-      const cachedData = await redisClient.get(cacheKey);
       
       if (cachedData) {
         return JSON.parse(cachedData) as Model;
@@ -809,9 +796,7 @@ export class SupervisedLearningService {
    * @param prediction The prediction to cache
    */
   private async cachePrediction(prediction: Prediction): Promise<void> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getPredictionCacheKey(prediction.id);
-      await redisClient.set(cacheKey, JSON.stringify(prediction), 'EX', 3600); // 1 hour
     }
   }
   

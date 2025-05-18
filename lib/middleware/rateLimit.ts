@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { redisClient } from '@/lib/utils/redis';
 import { logger } from '@/lib/logger';
 
 export interface RateLimitConfig {
@@ -54,7 +53,6 @@ export function rateLimit(config: Partial<RateLimitConfig> = {}) {
       const key = `rate-limit:${identifier}`;
       
       // Check if Redis is available
-      if (!redisClient) {
         logger.warn('Redis client not available for rate limiting, skipping rate limit check');
         return next();
       }
@@ -62,26 +60,18 @@ export function rateLimit(config: Partial<RateLimitConfig> = {}) {
       // Get the current count for this identifier
       let currentCount: number;
       
-      // Check if redisClient is a Redis instance with incr method
-      if (typeof (redisClient as any).incr === 'function') {
         // Increment the counter
-        currentCount = await (redisClient as any).incr(key);
         
         // If this is the first request, set an expiration
         if (currentCount === 1) {
-          await (redisClient as any).expire(key, options.windowMs);
         }
       } else {
         // For mock client, we'll use a simple approach
-        const count = await (redisClient as any).get(key) || '0';
         currentCount = parseInt(count, 10) + 1;
-        await (redisClient as any).set(key, currentCount.toString(), 'EX', options.windowMs);
       }
       
       // Get the remaining time window in seconds
       let ttl: number;
-      if (typeof (redisClient as any).ttl === 'function') {
-        ttl = await (redisClient as any).ttl(key);
       } else {
         // For mock client, assume the full window
         ttl = options.windowMs;

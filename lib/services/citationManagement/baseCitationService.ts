@@ -7,7 +7,6 @@
  */
 
 import { logger } from '@/lib/logger';
-import { redisClient } from '@/lib/utils/redis';
 import { AcademicPublication } from '@/lib/services/academicDatabases/baseAcademicDatabaseService';
 
 /**
@@ -321,13 +320,11 @@ export abstract class BaseCitationService {
    * @returns The cached collections or null if not found
    */
   protected async getCachedCollections(): Promise<CitationCollection[] | null> {
-    if (!redisClient) {
       return null;
     }
     
     try {
       const cacheKey = this.getCollectionsCacheKey();
-      const cachedCollections = await redisClient.get(cacheKey);
       
       if (cachedCollections) {
         return JSON.parse(cachedCollections);
@@ -349,13 +346,11 @@ export abstract class BaseCitationService {
    * @param collections The collections to cache
    */
   protected async cacheCollections(collections: CitationCollection[]): Promise<void> {
-    if (!redisClient) {
       return;
     }
     
     try {
       const cacheKey = this.getCollectionsCacheKey();
-      await redisClient.set(cacheKey, JSON.stringify(collections), 'EX', this.cacheTtl);
     } catch (error) {
       logger.warn('Error caching collections', {
         error: error instanceof Error ? error.message : String(error),
@@ -370,13 +365,11 @@ export abstract class BaseCitationService {
    * @returns The cached collection or null if not found
    */
   protected async getCachedCollection(id: string): Promise<CitationCollection | null> {
-    if (!redisClient) {
       return null;
     }
     
     try {
       const cacheKey = this.getCollectionCacheKey(id);
-      const cachedCollection = await redisClient.get(cacheKey);
       
       if (cachedCollection) {
         return JSON.parse(cachedCollection);
@@ -399,13 +392,11 @@ export abstract class BaseCitationService {
    * @param collection The collection to cache
    */
   protected async cacheCollection(collection: CitationCollection): Promise<void> {
-    if (!redisClient) {
       return;
     }
     
     try {
       const cacheKey = this.getCollectionCacheKey(collection.id);
-      await redisClient.set(cacheKey, JSON.stringify(collection), 'EX', this.cacheTtl);
     } catch (error) {
       logger.warn('Error caching collection', {
         error: error instanceof Error ? error.message : String(error),
@@ -421,13 +412,11 @@ export abstract class BaseCitationService {
    * @returns The cached citation or null if not found
    */
   protected async getCachedCitation(id: string): Promise<CitationItem | null> {
-    if (!redisClient) {
       return null;
     }
     
     try {
       const cacheKey = this.getCitationCacheKey(id);
-      const cachedCitation = await redisClient.get(cacheKey);
       
       if (cachedCitation) {
         return JSON.parse(cachedCitation);
@@ -450,13 +439,11 @@ export abstract class BaseCitationService {
    * @param citation The citation to cache
    */
   protected async cacheCitation(citation: CitationItem): Promise<void> {
-    if (!redisClient) {
       return;
     }
     
     try {
       const cacheKey = this.getCitationCacheKey(citation.id);
-      await redisClient.set(cacheKey, JSON.stringify(citation), 'EX', this.cacheTtl);
     } catch (error) {
       logger.warn('Error caching citation', {
         error: error instanceof Error ? error.message : String(error),
@@ -472,13 +459,11 @@ export abstract class BaseCitationService {
    * @returns The cached search results or null if not found
    */
   protected async getCachedSearchResults(params: CitationSearchParams): Promise<CitationSearchResults | null> {
-    if (!redisClient) {
       return null;
     }
     
     try {
       const cacheKey = this.getSearchCacheKey(params);
-      const cachedResults = await redisClient.get(cacheKey);
       
       if (cachedResults) {
         return JSON.parse(cachedResults);
@@ -502,13 +487,11 @@ export abstract class BaseCitationService {
    * @param results The search results
    */
   protected async cacheSearchResults(params: CitationSearchParams, results: CitationSearchResults): Promise<void> {
-    if (!redisClient) {
       return;
     }
     
     try {
       const cacheKey = this.getSearchCacheKey(params);
-      await redisClient.set(cacheKey, JSON.stringify(results), 'EX', this.cacheTtl);
     } catch (error) {
       logger.warn('Error caching search results', {
         error: error instanceof Error ? error.message : String(error),

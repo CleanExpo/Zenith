@@ -1,6 +1,5 @@
 import { VisualizationResult } from './baseDataAnalysisService';
 import { logger } from '@/lib/logger';
-import { redisClient } from '@/lib/utils/redis';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -20,8 +19,6 @@ async function deleteVisualizationResult(id: string): Promise<boolean> {
     
     // Invalidate the visualization result cache
     const cacheKey = this.getVisualizationResultCacheKey(id);
-    if (typeof window === 'undefined' && redisClient) {
-      await redisClient.del(cacheKey);
     }
     
     logger.info('Deleted visualization result', {

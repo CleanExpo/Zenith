@@ -5,7 +5,6 @@
  */
 
 import { logger } from '@/lib/logger';
-import { redisClient } from '@/lib/utils/redis';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -262,8 +261,6 @@ export class TimeSeriesAnalysisService {
       
       // Invalidate the time series cache
       const cacheKey = this.getTimeSeriesCacheKey(id);
-      if (typeof window === 'undefined' && redisClient) {
-        await redisClient.del(cacheKey);
       }
       
       logger.info('Deleted time series', {
@@ -536,9 +533,7 @@ export class TimeSeriesAnalysisService {
    * @param timeSeries The time series to cache
    */
   private async cacheTimeSeries(timeSeries: TimeSeriesData): Promise<void> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getTimeSeriesCacheKey(timeSeries.id);
-      await redisClient.set(cacheKey, JSON.stringify(timeSeries), 'EX', 3600); // 1 hour
     }
   }
   
@@ -548,9 +543,7 @@ export class TimeSeriesAnalysisService {
    * @returns The cached time series, or null if not found
    */
   private async getCachedTimeSeries(id: string): Promise<TimeSeriesData | null> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getTimeSeriesCacheKey(id);
-      const cachedData = await redisClient.get(cacheKey);
       
       if (cachedData) {
         return JSON.parse(cachedData) as TimeSeriesData;
@@ -565,9 +558,7 @@ export class TimeSeriesAnalysisService {
    * @param result The decomposition result to cache
    */
   private async cacheDecompositionResult(result: TimeSeriesDecompositionResult): Promise<void> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getDecompositionResultCacheKey(result.id);
-      await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 3600); // 1 hour
     }
   }
   
@@ -576,9 +567,7 @@ export class TimeSeriesAnalysisService {
    * @param result The forecast result to cache
    */
   private async cacheForecastResult(result: TimeSeriesForecastResult): Promise<void> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getForecastResultCacheKey(result.id);
-      await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 3600); // 1 hour
     }
   }
   
@@ -587,9 +576,7 @@ export class TimeSeriesAnalysisService {
    * @param result The anomaly detection result to cache
    */
   private async cacheAnomalyResult(result: TimeSeriesAnomalyResult): Promise<void> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getAnomalyResultCacheKey(result.id);
-      await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 3600); // 1 hour
     }
   }
   

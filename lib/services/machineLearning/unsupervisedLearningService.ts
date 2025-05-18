@@ -5,7 +5,6 @@
  */
 
 import { logger } from '@/lib/logger';
-import { redisClient } from '@/lib/utils/redis';
 import { v4 as uuidv4 } from 'uuid';
 import { Feature, Dataset } from './supervisedLearningService';
 
@@ -578,9 +577,7 @@ export class UnsupervisedLearningService {
    * @param dataset The dataset to cache
    */
   private async cacheDataset(dataset: Dataset): Promise<void> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getDatasetCacheKey(dataset.id);
-      await redisClient.set(cacheKey, JSON.stringify(dataset), 'EX', 3600); // 1 hour
     }
   }
   
@@ -590,9 +587,7 @@ export class UnsupervisedLearningService {
    * @returns The cached dataset, or null if not found
    */
   private async getCachedDataset(id: string): Promise<Dataset | null> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getDatasetCacheKey(id);
-      const cachedData = await redisClient.get(cacheKey);
       
       if (cachedData) {
         return JSON.parse(cachedData) as Dataset;
@@ -607,9 +602,7 @@ export class UnsupervisedLearningService {
    * @param result The clustering result to cache
    */
   private async cacheClusteringResult(result: ClusteringResult): Promise<void> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getClusteringResultCacheKey(result.id);
-      await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 3600); // 1 hour
     }
   }
   
@@ -619,9 +612,7 @@ export class UnsupervisedLearningService {
    * @returns The cached clustering result, or null if not found
    */
   private async getCachedClusteringResult(id: string): Promise<ClusteringResult | null> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getClusteringResultCacheKey(id);
-      const cachedData = await redisClient.get(cacheKey);
       
       if (cachedData) {
         return JSON.parse(cachedData) as ClusteringResult;
@@ -636,9 +627,7 @@ export class UnsupervisedLearningService {
    * @param result The dimensionality reduction result to cache
    */
   private async cacheDimensionalityReductionResult(result: DimensionalityReductionResult): Promise<void> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getDimensionalityReductionResultCacheKey(result.id);
-      await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 3600); // 1 hour
     }
   }
   
@@ -648,9 +637,7 @@ export class UnsupervisedLearningService {
    * @returns The cached dimensionality reduction result, or null if not found
    */
   private async getCachedDimensionalityReductionResult(id: string): Promise<DimensionalityReductionResult | null> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getDimensionalityReductionResultCacheKey(id);
-      const cachedData = await redisClient.get(cacheKey);
       
       if (cachedData) {
         return JSON.parse(cachedData) as DimensionalityReductionResult;
@@ -665,9 +652,7 @@ export class UnsupervisedLearningService {
    * @param result The anomaly detection result to cache
    */
   private async cacheAnomalyDetectionResult(result: AnomalyDetectionResult): Promise<void> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getAnomalyDetectionResultCacheKey(result.id);
-      await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 3600); // 1 hour
     }
   }
   
@@ -677,9 +662,7 @@ export class UnsupervisedLearningService {
    * @returns The cached anomaly detection result, or null if not found
    */
   private async getCachedAnomalyDetectionResult(id: string): Promise<AnomalyDetectionResult | null> {
-    if (typeof window === 'undefined' && redisClient) {
       const cacheKey = this.getAnomalyDetectionResultCacheKey(id);
-      const cachedData = await redisClient.get(cacheKey);
       
       if (cachedData) {
         return JSON.parse(cachedData) as AnomalyDetectionResult;

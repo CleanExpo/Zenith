@@ -10,8 +10,6 @@ public async deleteVisualizationResult(id: string): Promise<boolean> {
     
     // Invalidate the visualization result cache
     const cacheKey = this.getVisualizationResultCacheKey(id);
-    if (typeof window === 'undefined' && redisClient) {
-      await redisClient.del(cacheKey);
     }
     
     logger.info('Deleted visualization result', {

@@ -1,4 +1,3 @@
-import { redisClient } from '@/lib/utils/redis';
 import { logger } from '@/lib/logger';
 
 /**
@@ -29,11 +28,9 @@ export const CacheExpiration = {
  */
 export async function getFromCache<T>(key: string): Promise<T | null> {
   try {
-    if (!redisClient) {
       return null;
     }
 
-    const cachedData = await redisClient.get(key);
     if (!cachedData) {
       return null;
     }
@@ -58,11 +55,9 @@ export async function getFromCache<T>(key: string): Promise<T | null> {
  */
 export async function setInCache(key: string, data: any, expiration: number = CacheExpiration.MEDIUM): Promise<boolean> {
   try {
-    if (!redisClient) {
       return false;
     }
 
-    await redisClient.set(key, JSON.stringify(data), 'EX', expiration);
     logger.info('Stored data in cache', { key, expiration });
     return true;
   } catch (error: any) {
@@ -81,11 +76,9 @@ export async function setInCache(key: string, data: any, expiration: number = Ca
  */
 export async function removeFromCache(key: string): Promise<boolean> {
   try {
-    if (!redisClient) {
       return false;
     }
 
-    await redisClient.del(key);
     logger.info('Removed data from cache', { key });
     return true;
   } catch (error: any) {
@@ -104,12 +97,9 @@ export async function removeFromCache(key: string): Promise<boolean> {
  */
 export async function removeByPattern(pattern: string): Promise<boolean> {
   try {
-    if (!redisClient) {
       return false;
     }
 
-    // Check if redisClient is a Redis instance with scan method
-    if (typeof (redisClient as any).scan !== 'function') {
       logger.warn('Redis client does not support scan operation, cannot remove by pattern', { pattern });
       return false;
     }
@@ -119,7 +109,6 @@ export async function removeByPattern(pattern: string): Promise<boolean> {
     let keys: string[] = [];
 
     do {
-      const result = await (redisClient as any).scan(cursor, 'MATCH', pattern, 'COUNT', 100);
       cursor = result[0];
       keys = keys.concat(result[1]);
     } while (cursor !== '0');
@@ -129,7 +118,6 @@ export async function removeByPattern(pattern: string): Promise<boolean> {
       for (let i = 0; i < keys.length; i += 100) {
         const batch = keys.slice(i, i + 100);
         // Use multi to delete multiple keys in a single operation
-        const multi = (redisClient as any).multi();
         batch.forEach(key => multi.del(key));
         await multi.exec();
       }

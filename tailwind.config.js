@@ -1,6 +1,5 @@
-import type { Config } from 'tailwindcss';
-
-const config: Config = {
+/** @type {import('tailwindcss').Config} */
+const config = {
   darkMode: 'class',
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
@@ -10,11 +9,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Custom variables for theming (does not remove Tailwind's defaults)
         border: 'var(--border)',
         ring: 'var(--ring)',
         background: 'var(--background)',
         foreground: 'var(--foreground)',
-        // Keep default color palette for Tailwind classes like bg-gray-900
+        // You do NOT need to re-define gray, blue, etc. unless customizing
       },
       borderColor: {
         border: 'var(--border)',
@@ -32,8 +32,10 @@ const config: Config = {
   },
   plugins: [
     require('tailwindcss-animate'),
-    // You can add Tailwind CSS plugins here
-    // For example, require('@tailwindcss/forms') or require('@tailwindcss/typography')
+    // Add more plugins here, e.g.:
+    // require('@tailwindcss/forms'),
+    // require('@tailwindcss/typography'),
   ],
 };
-export default config;
+
+module.exports = config;

@@ -1,4 +1,3 @@
-import { redisClient } from '@/lib/utils/redis';
 import { logger } from '@/lib/logger';
 import { 
   CachePrefix, 
@@ -88,7 +87,6 @@ function getTagKey(tag: string): string {
  */
 async function updateMetadata(key: string, size: number): Promise<boolean> {
   try {
-    if (!redisClient) {
       return false;
     }
 
@@ -137,7 +135,6 @@ async function updateMetadata(key: string, size: number): Promise<boolean> {
  */
 async function associateWithTags(key: string, tags: string[]): Promise<boolean> {
   try {
-    if (!redisClient || !tags.length) {
       return false;
     }
 
@@ -145,11 +142,7 @@ async function associateWithTags(key: string, tags: string[]): Promise<boolean> 
     for (const tag of tags) {
       const tagKey = getTagKey(tag);
       
-      // Check if redisClient is a Redis instance with sadd method
-      if (typeof (redisClient as any).sadd === 'function') {
-        await (redisClient as any).sadd(tagKey, key);
         // Set expiration on tag key to avoid orphaned tags
-        await (redisClient as any).expire(tagKey, CacheExpiration.LONG);
       } else {
         // For mock client, we'll use a simple approach
         const tagSet = await getFromCache<string[]>(tagKey) || [];
@@ -178,15 +171,11 @@ async function associateWithTags(key: string, tags: string[]): Promise<boolean> 
  */
 async function getKeysByTag(tag: string): Promise<string[]> {
   try {
-    if (!redisClient) {
       return [];
     }
 
     const tagKey = getTagKey(tag);
     
-    // Check if redisClient is a Redis instance with smembers method
-    if (typeof (redisClient as any).smembers === 'function') {
-      return await (redisClient as any).smembers(tagKey) || [];
     } else {
       // For mock client
       return await getFromCache<string[]>(tagKey) || [];
@@ -207,7 +196,6 @@ async function getKeysByTag(tag: string): Promise<string[]> {
  */
 export async function invalidateByTags(tags: string[]): Promise<boolean> {
   try {
-    if (!redisClient || !tags.length) {
       return false;
     }
 
@@ -400,7 +388,6 @@ export async function getCacheStats(): Promise<{
   tagStats: { [tag: string]: number };
 }> {
   try {
-    if (!redisClient) {
       return {
         totalEntries: 0,
         totalSize: 0,
@@ -414,10 +401,7 @@ export async function getCacheStats(): Promise<{
     let cursor = '0';
     let metadataKeys: string[] = [];
     
-    // Check if redisClient is a Redis instance with scan method
-    if (typeof (redisClient as any).scan === 'function') {
       do {
-        const result = await (redisClient as any).scan(cursor, 'MATCH', `${METADATA_PREFIX}*`, 'COUNT', 100);
         cursor = result[0];
         metadataKeys = metadataKeys.concat(result[1]);
       } while (cursor !== '0');
@@ -438,9 +422,7 @@ export async function getCacheStats(): Promise<{
     let tagKeys: string[] = [];
     cursor = '0';
     
-    if (typeof (redisClient as any).scan === 'function') {
       do {
-        const result = await (redisClient as any).scan(cursor, 'MATCH', `${TAGS_PREFIX}*`, 'COUNT', 100);
         cursor = result[0];
         tagKeys = tagKeys.concat(result[1]);
       } while (cursor !== '0');
@@ -503,13 +485,9 @@ export async function getCacheStats(): Promise<{
  */
 export async function clearAllCache(): Promise<boolean> {
   try {
-    if (!redisClient) {
       return false;
     }
 
-    // Check if redisClient is a Redis instance with flushdb method
-    if (typeof (redisClient as any).flushdb === 'function') {
-      await (redisClient as any).flushdb();
       logger.info('Cache cleared successfully');
       return true;
     } else {

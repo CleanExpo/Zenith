@@ -7,7 +7,6 @@
  */
 
 import { logger } from '@/lib/logger';
-import { redisClient } from '@/lib/utils/redis';
 
 /**
  * Search parameters for academic database queries
@@ -165,13 +164,11 @@ export abstract class BaseAcademicDatabaseService {
    * @returns The cached search results or null if not found
    */
   protected async getCachedSearchResults(params: AcademicSearchParams): Promise<AcademicSearchResults | null> {
-    if (!redisClient) {
       return null;
     }
     
     try {
       const cacheKey = this.getCacheKey(params);
-      const cachedResults = await redisClient.get(cacheKey);
       
       if (cachedResults) {
         return JSON.parse(cachedResults);
@@ -195,13 +192,11 @@ export abstract class BaseAcademicDatabaseService {
    * @param results The search results
    */
   protected async cacheSearchResults(params: AcademicSearchParams, results: AcademicSearchResults): Promise<void> {
-    if (!redisClient) {
       return;
     }
     
     try {
       const cacheKey = this.getCacheKey(params);
-      await redisClient.set(cacheKey, JSON.stringify(results), 'EX', this.cacheTtl);
     } catch (error) {
       logger.warn('Error caching search results', {
         error: error instanceof Error ? error.message : String(error),
@@ -217,13 +212,11 @@ export abstract class BaseAcademicDatabaseService {
    * @returns The cached publication or null if not found
    */
   protected async getCachedPublication(id: string): Promise<AcademicPublication | null> {
-    if (!redisClient) {
       return null;
     }
     
     try {
       const cacheKey = this.getPublicationCacheKey(id);
-      const cachedPublication = await redisClient.get(cacheKey);
       
       if (cachedPublication) {
         return JSON.parse(cachedPublication);
@@ -246,13 +239,11 @@ export abstract class BaseAcademicDatabaseService {
    * @param publication The publication to cache
    */
   protected async cachePublication(publication: AcademicPublication): Promise<void> {
-    if (!redisClient) {
       return;
     }
     
     try {
       const cacheKey = this.getPublicationCacheKey(publication.id);
-      await redisClient.set(cacheKey, JSON.stringify(publication), 'EX', this.cacheTtl);
     } catch (error) {
       logger.warn('Error caching publication', {
         error: error instanceof Error ? error.message : String(error),
