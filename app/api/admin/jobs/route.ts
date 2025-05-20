@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jobQueue, JobStatus, JobPriority } from '@/lib/utils/jobQueue';
 import { logger } from '@/lib/logger';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client'
 import { cookies } from 'next/headers';
 import { UserRole } from '@/lib/auth/types';
 
@@ -172,3 +172,4 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

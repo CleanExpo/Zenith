@@ -4,14 +4,14 @@ const nextConfig = {
   swcMinify: true,
   images: {
     domains: ['uqfgdezadpkiadugufbs.supabase.co'],
-    unoptimized: process.env.NODE_ENV === 'development',
+    unoptimized: false,
   },
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],
   },
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: true,
   },
   // Ensure CSS is properly extracted and loaded
   webpack: (config) => {
@@ -32,6 +32,15 @@ const nextConfig = {
 
     return config;
   },
+fonts: {
+  sans: {
+    name: 'Inter',
+    local: 'Inter',
+    weight: '400',
+    style: 'normal',
+    display: 'swap',
+  },
+},
 };
 
 export default nextConfig;

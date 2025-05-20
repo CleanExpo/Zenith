@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCitationService } from '@/lib/services/citationManagement/citationServiceFactory';
 import { logger } from '@/lib/logger';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client'
 import { AcademicPublication } from '@/lib/services/academicDatabases/baseAcademicDatabaseService';
 
 /**
@@ -104,3 +104,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

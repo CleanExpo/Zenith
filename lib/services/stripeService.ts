@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger';
 
 // Define subscription plan types

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger';
 import { ResearchProject } from '@/lib/database.types';
 import { 
@@ -342,3 +342,4 @@ export class EnhancedCachedResearchProjectService {
     }
   }
 }
+

@@ -2,87 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .shine {
-    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
-    animation: shine 2s infinite;
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+  }
+  
+  body {
+    background-color: white;
+    color: black;
   }
 }
 
-@keyframes shine {
-  0% {
-    transform: skewX(-20deg) translateX(-150%);
-  }
-  100% {
-    transform: skewX(-20deg) translateX(150%);
-  }
-}
-
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-/* Dark mode toggle */
-.dark {
-  @apply bg-gray-900 text-white;
-}
-
-/* Custom button styles */
-.btn-gradient {
-  @apply relative bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-700 hover:to-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg overflow-hidden;
-}
-
-.btn-outline {
-  @apply flex items-center justify-center gap-2 border py-2 px-4 rounded-lg transition-all duration-300;
-}
-
-/* Form control styles */
-.input-group {
-  @apply relative;
-}
-
-.input-icon {
-  @apply absolute left-3 top-1/2 -translate-y-1/2;
-}
-
-.input-field {
-  @apply w-full pl-10 pr-10 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors;
-}
-
-/* Checkbox styles */
-.checkbox-container {
-  @apply h-4 w-4 rounded border flex items-center justify-center cursor-pointer;
-}
-
-.checkbox-checked {
-  @apply bg-blue-500 border-blue-500;
-}
-
-.checkbox-icon {
-  @apply h-3 w-3 text-white;
-}
-
-/* Divider with text */
-.divider {
-  @apply relative flex items-center justify-center my-4;
-}
-
-.divider-line {
-  @apply border-t w-full;
-}
-
-.divider-text {
-  @apply text-sm px-3 absolute;
-}
+/* Your custom styles here */

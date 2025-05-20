@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client';
+import { redisClient } from '@/lib/utils/redis';
 import { logger } from '@/lib/logger';
 
 /**
@@ -75,15 +76,15 @@ export async function GET(request: NextRequest) {
   // Check Redis connection
   const redisStartTime = Date.now();
   try {
+    if (!redisClient) {
       throw new Error('Redis client not initialized');
     }
     
+    // For mock client, we'll just check if it exists
+    if (redisClient) {
+      // Mock client is available
     } else {
-      // For mock client, we'll just check if it exists
-        // Mock client is available
-      } else {
-        throw new Error('Redis mock client not available');
-      }
+      throw new Error('Redis mock client not available');
     }
     
     healthResponse.services.redis.responseTime = Date.now() - redisStartTime;

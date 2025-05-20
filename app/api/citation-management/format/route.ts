@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCitationService } from '@/lib/services/citationManagement/citationServiceFactory';
 import { CitationFormat } from '@/lib/services/citationManagement/baseCitationService';
 import { logger } from '@/lib/logger';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client'
 
 /**
  * Format a citation in a specific format
@@ -107,3 +107,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

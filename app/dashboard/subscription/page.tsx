@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client'
 import { SubscriptionPlans } from '@/components/subscription/SubscriptionPlans';
 import { BillingHistory } from '@/components/subscription/BillingHistory';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -90,3 +90,4 @@ export default async function SubscriptionPage({
     </div>
   );
 }
+

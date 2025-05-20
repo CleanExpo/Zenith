@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCitationService } from '@/lib/services/citationManagement/citationServiceFactory';
 import { CitationSearchParams } from '@/lib/services/citationManagement/baseCitationService';
 import { logger } from '@/lib/logger';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client'
 
 /**
  * Search for citations in a citation management tool
@@ -93,3 +93,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+

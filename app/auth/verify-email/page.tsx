@@ -31,7 +31,7 @@ export default function VerifyEmailPage() {
         }
         
         if (user) {
-          setUserEmail(user.email);
+          setUserEmail(user.email || null);
           setIsVerified(user.email_confirmed_at !== null);
         } else {
           // Try to get email from URL

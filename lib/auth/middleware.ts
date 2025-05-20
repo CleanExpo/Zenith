@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Permission, UserRole } from './types';
 import { hasPermissionServer, hasRoleServer, hasAnyRoleServer } from './rbac';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client'
 
 /**
  * Middleware to check if a user has a specific permission

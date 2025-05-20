@@ -280,7 +280,6 @@ export class SupervisedLearningService {
       
       // Invalidate the dataset cache
       const cacheKey = this.getDatasetCacheKey(id);
-      }
       
       logger.info('Deleted dataset', {
         userId: this.userId,
@@ -532,7 +531,6 @@ export class SupervisedLearningService {
       
       // Invalidate the model cache
       const cacheKey = this.getModelCacheKey(id);
-      }
       
       logger.info('Deleted model', {
         userId: this.userId,
@@ -746,8 +744,15 @@ export class SupervisedLearningService {
    * @param dataset The dataset to cache
    */
   private async cacheDataset(dataset: Dataset): Promise<void> {
-      const cacheKey = this.getDatasetCacheKey(dataset.id);
-    }
+    const cacheKey = this.getDatasetCacheKey(dataset.id);
+    const cache = (globalThis as any).cache || {};
+    cache[cacheKey] = JSON.stringify(dataset);
+    (globalThis as any).cache = cache;
+    logger.info('Cached dataset', {
+      userId: this.userId,
+      datasetId: dataset.id,
+      cacheKey
+    });
   }
   
   /**
@@ -755,25 +760,32 @@ export class SupervisedLearningService {
    * @param id The dataset ID
    * @returns The cached dataset, or null if not found
    */
-  private async getCachedDataset(id: string): Promise<Dataset | null> {
-      const cacheKey = this.getDatasetCacheKey(id);
-      
-      if (cachedData) {
-        return JSON.parse(cachedData) as Dataset;
-      }
-    }
-    
-    return null;
+public async getCachedDataset(id: string): Promise<Dataset | null> {
+  const cacheKey = this.getDatasetCacheKey(id);
+  const cachedData = await this.getFromCache(cacheKey);
+  
+  if (cachedData) {
+    return JSON.parse(cachedData) as Dataset;
   }
+  
+  return null;
+}
   
   /**
    * Cache a model
    * @param model The model to cache
    */
-  private async cacheModel(model: Model): Promise<void> {
-      const cacheKey = this.getModelCacheKey(model.id);
-    }
-  }
+public async cacheModel(model: Model): Promise<void> {
+  const cacheKey = this.getModelCacheKey(model.id);
+  const cache = (globalThis as any).cache || {};
+  cache[cacheKey] = JSON.stringify(model);
+  (globalThis as any).cache = cache;
+  logger.info('Cached model', {
+    userId: this.userId,
+    modelId: model.id,
+    cacheKey
+  });
+}
   
   /**
    * Get a cached model
@@ -781,11 +793,11 @@ export class SupervisedLearningService {
    * @returns The cached model, or null if not found
    */
   private async getCachedModel(id: string): Promise<Model | null> {
-      const cacheKey = this.getModelCacheKey(id);
-      
-      if (cachedData) {
-        return JSON.parse(cachedData) as Model;
-      }
+    const cacheKey = this.getModelCacheKey(id);
+    const cachedData = await this.getFromCache(cacheKey);
+    
+    if (cachedData) {
+      return JSON.parse(cachedData) as Model;
     }
     
     return null;
@@ -796,8 +808,15 @@ export class SupervisedLearningService {
    * @param prediction The prediction to cache
    */
   private async cachePrediction(prediction: Prediction): Promise<void> {
-      const cacheKey = this.getPredictionCacheKey(prediction.id);
-    }
+    const cacheKey = this.getPredictionCacheKey(prediction.id);
+    const cache = (globalThis as any).cache || {};
+    cache[cacheKey] = JSON.stringify(prediction);
+    (globalThis as any).cache = cache;
+    logger.info('Cached prediction', {
+      userId: this.userId,
+      predictionId: prediction.id,
+      cacheKey
+    });
   }
   
   /**
@@ -826,4 +845,15 @@ export class SupervisedLearningService {
   private getPredictionCacheKey(id: string): string {
     return `${this.cacheKeyPrefix}:prediction:${id}`;
   }
+  
+  /**
+   * Get data from cache
+   * @param key The cache key
+   * @returns The cached data, or null if not found
+   */
+private async getFromCache(key: string): Promise<string | null> {
+  // Assuming a simple in-memory cache for demonstration purposes
+  const cache = (globalThis as any).cache || {};
+  return cache[key] || null;
+}
 }

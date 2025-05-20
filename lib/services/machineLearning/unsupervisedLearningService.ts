@@ -577,101 +577,93 @@ export class UnsupervisedLearningService {
    * @param dataset The dataset to cache
    */
   private async cacheDataset(dataset: Dataset): Promise<void> {
-      const cacheKey = this.getDatasetCacheKey(dataset.id);
-    }
+    const cacheKey = this.getDatasetCacheKey(dataset.id);
+    this.cache[cacheKey] = JSON.stringify(dataset);
   }
-  
+
   /**
    * Get a cached dataset
    * @param id The dataset ID
    * @returns The cached dataset, or null if not found
    */
   private async getCachedDataset(id: string): Promise<Dataset | null> {
-      const cacheKey = this.getDatasetCacheKey(id);
-      
-      if (cachedData) {
-        return JSON.parse(cachedData) as Dataset;
-      }
+    const cacheKey = this.getDatasetCacheKey(id);
+    const cachedData = this.cache[cacheKey];
+    if (cachedData) {
+      return JSON.parse(cachedData) as Dataset;
     }
-    
     return null;
   }
-  
+
   /**
    * Cache a clustering result
    * @param result The clustering result to cache
    */
   private async cacheClusteringResult(result: ClusteringResult): Promise<void> {
-      const cacheKey = this.getClusteringResultCacheKey(result.id);
-    }
+    const cacheKey = this.getClusteringResultCacheKey(result.id);
+    this.cache[cacheKey] = JSON.stringify(result);
   }
-  
+
   /**
    * Get a cached clustering result
    * @param id The clustering result ID
    * @returns The cached clustering result, or null if not found
    */
   private async getCachedClusteringResult(id: string): Promise<ClusteringResult | null> {
-      const cacheKey = this.getClusteringResultCacheKey(id);
-      
-      if (cachedData) {
-        return JSON.parse(cachedData) as ClusteringResult;
-      }
+    const cacheKey = this.getClusteringResultCacheKey(id);
+    const cachedData = this.cache[cacheKey];
+    if (cachedData) {
+      return JSON.parse(cachedData) as ClusteringResult;
     }
-    
     return null;
   }
-  
+
   /**
    * Cache a dimensionality reduction result
    * @param result The dimensionality reduction result to cache
    */
   private async cacheDimensionalityReductionResult(result: DimensionalityReductionResult): Promise<void> {
-      const cacheKey = this.getDimensionalityReductionResultCacheKey(result.id);
-    }
+    const cacheKey = this.getDimensionalityReductionResultCacheKey(result.id);
+    this.cache[cacheKey] = JSON.stringify(result);
   }
-  
+
   /**
    * Get a cached dimensionality reduction result
    * @param id The dimensionality reduction result ID
    * @returns The cached dimensionality reduction result, or null if not found
    */
   private async getCachedDimensionalityReductionResult(id: string): Promise<DimensionalityReductionResult | null> {
-      const cacheKey = this.getDimensionalityReductionResultCacheKey(id);
-      
-      if (cachedData) {
-        return JSON.parse(cachedData) as DimensionalityReductionResult;
-      }
+    const cacheKey = this.getDimensionalityReductionResultCacheKey(id);
+    const cachedData = this.cache[cacheKey];
+    if (cachedData) {
+      return JSON.parse(cachedData) as DimensionalityReductionResult;
     }
-    
     return null;
   }
-  
+
   /**
    * Cache an anomaly detection result
    * @param result The anomaly detection result to cache
    */
   private async cacheAnomalyDetectionResult(result: AnomalyDetectionResult): Promise<void> {
-      const cacheKey = this.getAnomalyDetectionResultCacheKey(result.id);
-    }
+    const cacheKey = this.getAnomalyDetectionResultCacheKey(result.id);
+    this.cache[cacheKey] = JSON.stringify(result);
   }
-  
+
   /**
    * Get a cached anomaly detection result
    * @param id The anomaly detection result ID
    * @returns The cached anomaly detection result, or null if not found
    */
   private async getCachedAnomalyDetectionResult(id: string): Promise<AnomalyDetectionResult | null> {
-      const cacheKey = this.getAnomalyDetectionResultCacheKey(id);
-      
-      if (cachedData) {
-        return JSON.parse(cachedData) as AnomalyDetectionResult;
-      }
+    const cacheKey = this.getAnomalyDetectionResultCacheKey(id);
+    const cachedData = this.cache[cacheKey];
+    if (cachedData) {
+      return JSON.parse(cachedData) as AnomalyDetectionResult;
     }
-    
     return null;
   }
-  
+
   /**
    * Get the cache key for a dataset
    * @param id The dataset ID
@@ -680,7 +672,7 @@ export class UnsupervisedLearningService {
   private getDatasetCacheKey(id: string): string {
     return `${this.cacheKeyPrefix}:dataset:${id}`;
   }
-  
+
   /**
    * Get the cache key for a clustering result
    * @param id The clustering result ID
@@ -689,7 +681,7 @@ export class UnsupervisedLearningService {
   private getClusteringResultCacheKey(id: string): string {
     return `${this.cacheKeyPrefix}:clustering:${id}`;
   }
-  
+
   /**
    * Get the cache key for a dimensionality reduction result
    * @param id The dimensionality reduction result ID
@@ -698,7 +690,7 @@ export class UnsupervisedLearningService {
   private getDimensionalityReductionResultCacheKey(id: string): string {
     return `${this.cacheKeyPrefix}:dimensionality-reduction:${id}`;
   }
-  
+
   /**
    * Get the cache key for an anomaly detection result
    * @param id The anomaly detection result ID
@@ -706,5 +698,82 @@ export class UnsupervisedLearningService {
    */
   private getAnomalyDetectionResultCacheKey(id: string): string {
     return `${this.cacheKeyPrefix}:anomaly-detection:${id}`;
+  }
+
+  private cache: Record<string, string> = {};
+
+  /**
+   * Delete a dataset by ID
+   * @param id The dataset ID
+   */
+  public async deleteDataset(id: string): Promise<void> {
+    try {
+      // Check the cache first
+      const cacheKey = this.getDatasetCacheKey(id);
+      delete this.cache[cacheKey];
+
+      logger.info('Deleted dataset from cache', {
+        userId: this.userId,
+        datasetId: id
+      });
+    } catch (error) {
+      logger.error('Error deleting dataset', {
+        error: error instanceof Error ? error.message : String(error),
+        userId: this.userId,
+        datasetId: id
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a clustering result by ID
+   * @param id The clustering result ID
+   */
+  public async deleteClusteringResult(id: string): Promise<void> {
+    try {
+      // Check the cache first
+      const cacheKey = this.getClusteringResultCacheKey(id);
+      delete this.cache[cacheKey];
+
+      logger.info('Deleted clustering result from cache', {
+        userId: this.userId,
+        clusteringResultId: id
+      });
+    } catch (error) {
+      logger.error('Error deleting clustering result', {
+        error: error instanceof Error ? error.message : String(error),
+        userId: this.userId,
+        clusteringResultId: id
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a dimensionality reduction result by ID
+   * @param id The dimensionality reduction result ID
+   */
+  public async deleteDimensionalityReductionResult(id: string): Promise<void> {
+    try {
+      // Check the cache first
+      const cacheKey = this.getDimensionalityReductionResultCacheKey(id);
+      delete this.cache[cacheKey];
+
+      logger.info('Deleted dimensionality reduction result from cache', {
+        userId: this.userId,
+        dimensionalityReductionResultId: id
+      });
+    } catch (error) {
+      logger.error('Error deleting dimensionality reduction result', {
+        error: error instanceof Error ? error.message : String(error),
+        userId: this.userId,
+        dimensionalityReductionResultId: id
+      });
+
+      throw error;
+    }
   }
 }

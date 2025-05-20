@@ -1,30 +1,37 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-
-// Only import cookies if running in the app directory (dynamic import avoids early error)
-let getCookies: (() => any) | undefined;
-try {
-  // @ts-ignore
-  getCookies = require('next/headers').cookies;
-} catch {
-  // Not available in /pages or outside App Router
-}
+import { cookies } from 'next/headers';
 
 export function createClient() {
-  // If cookies are available, use them (App Router)
-  if (getCookies) {
-    return createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get: getCookies(),
-        } as CookieOptions,
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        async get(name: string) {
+          const cookieStore = await cookies();
+          return cookieStore.get(name)?.value;
+        },
+        async set(name: string, value: string, options: CookieOptions) {
+          try {
+            const cookieStore = await cookies();
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // The set method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+        async remove(name: string, options: CookieOptions) {
+          try {
+            const cookieStore = await cookies();
+            cookieStore.set({ name, value: '', ...options });
+          } catch (error) {
+            // The set method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        }
       }
-    );
-  }
-
-  // Otherwise, use classic method or throw a helpful error
-  throw new Error(
-    "createClient can only be used in a Server Component or Route Handler (App Router) where 'next/headers' is available."
+    }
   );
 }

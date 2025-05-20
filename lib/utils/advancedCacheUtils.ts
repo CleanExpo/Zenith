@@ -87,9 +87,6 @@ function getTagKey(tag: string): string {
  */
 async function updateMetadata(key: string, size: number): Promise<boolean> {
   try {
-      return false;
-    }
-
     const metadataKey = getMetadataKey(key);
     const existingMetadata = await getFromCache<CacheMetadata>(metadataKey);
     
@@ -119,7 +116,7 @@ async function updateMetadata(key: string, size: number): Promise<boolean> {
       return true;
     }
   } catch (error: any) {
-    logger.warn('Error updating cache metadata', { 
+    logger.error('Error updating cache metadata', { 
       error: error.message,
       key 
     });
@@ -135,21 +132,15 @@ async function updateMetadata(key: string, size: number): Promise<boolean> {
  */
 async function associateWithTags(key: string, tags: string[]): Promise<boolean> {
   try {
-      return false;
-    }
-
     // For each tag, add this key to the tag's set
     for (const tag of tags) {
       const tagKey = getTagKey(tag);
       
-        // Set expiration on tag key to avoid orphaned tags
-      } else {
-        // For mock client, we'll use a simple approach
-        const tagSet = await getFromCache<string[]>(tagKey) || [];
-        if (!tagSet.includes(key)) {
-          tagSet.push(key);
-          await setInCache(tagKey, tagSet, CacheExpiration.LONG);
-        }
+      // For mock client, we'll use a simple approach
+      const tagSet = await getFromCache<string[]>(tagKey) || [];
+      if (!tagSet.includes(key)) {
+        tagSet.push(key);
+        await setInCache(tagKey, tagSet, CacheExpiration.LONG);
       }
     }
     
@@ -171,15 +162,10 @@ async function associateWithTags(key: string, tags: string[]): Promise<boolean> 
  */
 async function getKeysByTag(tag: string): Promise<string[]> {
   try {
-      return [];
-    }
-
     const tagKey = getTagKey(tag);
     
-    } else {
-      // For mock client
-      return await getFromCache<string[]>(tagKey) || [];
-    }
+    // For mock client
+    return await getFromCache<string[]>(tagKey) || [];
   } catch (error: any) {
     logger.warn('Error getting keys by tag', { 
       error: error.message,
@@ -196,9 +182,6 @@ async function getKeysByTag(tag: string): Promise<string[]> {
  */
 export async function invalidateByTags(tags: string[]): Promise<boolean> {
   try {
-      return false;
-    }
-
     let success = true;
     
     for (const tag of tags) {
@@ -388,45 +371,33 @@ export async function getCacheStats(): Promise<{
   tagStats: { [tag: string]: number };
 }> {
   try {
-      return {
-        totalEntries: 0,
-        totalSize: 0,
-        hitRate: 0,
-        avgAccessCount: 0,
-        tagStats: {}
-      };
-    }
-
     // Get all metadata keys
     let cursor = '0';
     let metadataKeys: string[] = [];
     
-      do {
-        cursor = result[0];
-        metadataKeys = metadataKeys.concat(result[1]);
-      } while (cursor !== '0');
-    } else {
-      // For mock client, we can't get all keys easily
-      // This is a simplified approach for development
-      logger.warn('Cannot get complete cache stats with mock Redis client');
-      return {
-        totalEntries: 0,
-        totalSize: 0,
-        hitRate: 0,
-        avgAccessCount: 0,
-        tagStats: {}
-      };
-    }
+do {
+  const result = await getFromCache<[string, string[]]>(`metadata:*`);
+  if (result) {
+    cursor = result[0];
+    metadataKeys = metadataKeys.concat(result[1]);
+  } else {
+    cursor = '0';
+  }
+} while (cursor !== '0');
     
     // Get all tag keys
-    let tagKeys: string[] = [];
     cursor = '0';
+    let tagKeys: string[] = [];
     
-      do {
-        cursor = result[0];
-        tagKeys = tagKeys.concat(result[1]);
-      } while (cursor !== '0');
-    }
+do {
+  const result = await getFromCache<[string, string[]]>(`tags:*`);
+  if (result) {
+    cursor = result[0];
+    tagKeys = tagKeys.concat(result[1]);
+  } else {
+    cursor = '0';
+  }
+} while (cursor !== '0');
     
     // Process metadata
     let totalSize = 0;
@@ -485,9 +456,9 @@ export async function getCacheStats(): Promise<{
  */
 export async function clearAllCache(): Promise<boolean> {
   try {
-      return false;
-    }
-
+    // For real Redis client, clear all keys
+    if (/* condition to check if real Redis client */) {
+      await removeByPattern('*');
       logger.info('Cache cleared successfully');
       return true;
     } else {
