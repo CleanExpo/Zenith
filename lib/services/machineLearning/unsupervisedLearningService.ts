@@ -7,26 +7,18 @@
 import { logger } from '@/lib/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { Feature, Dataset } from './supervisedLearningService';
+import { addDataset, getDataset, deleteDataset } from './datasetStorage';
 
 /**
- * Algorithm types
+ * Unsupervised Algorithm Type
  */
 export enum UnsupervisedAlgorithmType {
-  // Clustering algorithms
-  K_MEANS = 'k_means',
-  HIERARCHICAL = 'hierarchical',
-  DBSCAN = 'dbscan',
-  GAUSSIAN_MIXTURE = 'gaussian_mixture',
-  
-  // Dimensionality reduction algorithms
+  CLUSTERING = 'clustering',
+  DIMENSIONALITY_REDUCTION = 'dimensionality_reduction',
+  ANOMALY_DETECTION = 'anomaly_detection',
+  KMEANS = 'kmeans',
   PCA = 'pca',
-  T_SNE = 't_sne',
-  UMAP = 'umap',
-  
-  // Anomaly detection algorithms
-  ISOLATION_FOREST = 'isolation_forest',
-  ONE_CLASS_SVM = 'one_class_svm',
-  LOCAL_OUTLIER_FACTOR = 'local_outlier_factor'
+  ISOLATION_FOREST = 'isolationForest'
 }
 
 /**
@@ -55,7 +47,7 @@ export interface ClusteringResult {
   id: string;
   datasetId: string;
   algorithm: UnsupervisedAlgorithmType;
-  parameters: Record<string, any>;
+  parameters: ClusteringParameters;
   clusters: Cluster[];
   labels: number[];
   metrics: Record<string, number>;
@@ -70,7 +62,7 @@ export interface DimensionalityReductionResult {
   id: string;
   datasetId: string;
   algorithm: UnsupervisedAlgorithmType;
-  parameters: Record<string, any>;
+  parameters: DimensionalityReductionParameters;
   components: number;
   projectedData: number[][];
   explainedVariance?: number[];
@@ -85,7 +77,7 @@ export interface AnomalyDetectionResult {
   id: string;
   datasetId: string;
   algorithm: UnsupervisedAlgorithmType;
-  parameters: Record<string, any>;
+  parameters: AnomalyDetectionParameters;
   anomalies: number[];
   scores: number[];
   threshold: number;
@@ -96,22 +88,49 @@ export interface AnomalyDetectionResult {
 /**
  * Unsupervised learning service
  */
+export interface ClusteringParameters {
+  k: number;
+  // Add other parameters as needed
+  // Example: maxIterations?: number;
+}
+
+export interface DimensionalityReductionParameters {
+  components: number;
+  // Add other parameters as needed
+  // Example: nNeighbors?: number;
+}
+
+export interface AnomalyDetectionParameters {
+  contamination: number;
+  // Add other parameters as needed
+  // Example: n_estimators?: number;
+}
+
 export class UnsupervisedLearningService {
   private userId: string;
-  private cacheKeyPrefix: string = 'unsupervised-learning';
-  
-  /**
-   * Constructor
-   * @param userId The user ID
-   */
+  private cache: Record<string, string> = {};
+
   constructor(userId: string) {
     this.userId = userId;
-    
-    logger.info('Initialized unsupervised learning service', {
-      userId: this.userId
-    });
   }
-  
+
+  private cacheKeyPrefix: string = 'unsupervised-learning';
+
+  /**
+   * Log and rethrow error
+   * @param error The error to log
+   * @param context Additional context for logging
+   */
+  private logAndRethrowError(error: unknown, context: Record<string, any>): never {
+    logger.error('Error occurred', {
+      error: error instanceof Error ? error.message : String(error),
+      userId: this.userId,
+      ...context
+    });
+
+    throw error;
+  }
+
   /**
    * Create a new dataset
    * @param name The dataset name
@@ -145,29 +164,23 @@ export class UnsupervisedLearningService {
         tags,
         dataSource
       };
-      
+
       // Cache the dataset
       await this.cacheDataset(dataset);
-      
+
       logger.info('Created dataset for unsupervised learning', {
         userId: this.userId,
         datasetId: dataset.id,
         name,
         rowCount
       });
-      
+
       return dataset;
     } catch (error) {
-      logger.error('Error creating dataset for unsupervised learning', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        name
-      });
-      
-      throw error;
+      this.logAndRethrowError(error, { name });
     }
   }
-  
+
   /**
    * Get a dataset by ID
    * @param id The dataset ID
@@ -177,30 +190,24 @@ export class UnsupervisedLearningService {
     try {
       // Check the cache first
       const cachedDataset = await this.getCachedDataset(id);
-      
+
       if (cachedDataset) {
         logger.info('Retrieved dataset from cache', {
           userId: this.userId,
           datasetId: id
         });
-        
+
         return cachedDataset;
       }
-      
+
       // In a real implementation, this would make an API call or database query
       // For now, we'll throw an error since we don't have a database
       throw new Error(`Dataset not found: ${id}`);
     } catch (error) {
-      logger.error('Error getting dataset', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        datasetId: id
-      });
-      
-      throw error;
+      this.logAndRethrowError(error, { datasetId: id });
     }
   }
-  
+
   /**
    * Perform clustering
    * @param datasetId The dataset ID
@@ -211,41 +218,41 @@ export class UnsupervisedLearningService {
   public async performClustering(
     datasetId: string,
     algorithm: UnsupervisedAlgorithmType,
-    parameters: Record<string, any>
+    parameters: ClusteringParameters
   ): Promise<ClusteringResult> {
     try {
       // Get the dataset
       const dataset = await this.getDataset(datasetId);
-      
+
       // In a real implementation, this would use a machine learning library
       // For now, we'll create a mock clustering result
-      
+
       // Get the number of clusters
-      const k = parameters.k || 3;
-      
+      const k = (parameters.k as number) || 3;
+
       // Create mock clusters
       const clusters: Cluster[] = [];
       const labels: number[] = [];
-      
+
       // Generate random cluster assignments
       for (let i = 0; i < dataset.rowCount; i++) {
         const clusterIndex = Math.floor(Math.random() * k);
         labels.push(clusterIndex);
       }
-      
+
       // Count the number of points in each cluster
       const clusterSizes = new Array(k).fill(0);
       labels.forEach(label => {
         clusterSizes[label]++;
       });
-      
+
       // Create the clusters
       for (let i = 0; i < k; i++) {
         // Create a mock centroid
         const centroid = dataset.features
           .filter(feature => feature.type === 'numeric')
           .map(() => Math.random() * 10 - 5);
-        
+
         // Create mock feature values for the cluster
         const features: Record<string, number> = {};
         dataset.features.forEach(feature => {
@@ -253,7 +260,7 @@ export class UnsupervisedLearningService {
             features[feature.name] = Math.random() * 10;
           }
         });
-        
+
         clusters.push({
           id: i,
           centroid,
@@ -261,14 +268,14 @@ export class UnsupervisedLearningService {
           features
         });
       }
-      
+
       // Create mock metrics
       const metrics: Record<string, number> = {
         silhouette: Math.random() * 0.5 + 0.3,
         daviesBouldin: Math.random() * 2 + 1,
         calinski: Math.random() * 100 + 50
       };
-      
+
       // Create the clustering result
       const clusteringResult: ClusteringResult = {
         id: uuidv4(),
@@ -281,10 +288,10 @@ export class UnsupervisedLearningService {
         createdAt: new Date().toISOString(),
         ownerId: this.userId
       };
-      
+
       // Cache the clustering result
       await this.cacheClusteringResult(clusteringResult);
-      
+
       logger.info('Performed clustering', {
         userId: this.userId,
         datasetId,
@@ -292,20 +299,13 @@ export class UnsupervisedLearningService {
         clusteringId: clusteringResult.id,
         numClusters: k
       });
-      
+
       return clusteringResult;
     } catch (error) {
-      logger.error('Error performing clustering', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        datasetId,
-        algorithm
-      });
-      
-      throw error;
+      this.logAndRethrowError(error, { datasetId, algorithm });
     }
   }
-  
+
   /**
    * Perform dimensionality reduction
    * @param datasetId The dataset ID
@@ -316,36 +316,36 @@ export class UnsupervisedLearningService {
   public async performDimensionalityReduction(
     datasetId: string,
     algorithm: UnsupervisedAlgorithmType,
-    parameters: Record<string, any>
+    parameters: DimensionalityReductionParameters
   ): Promise<DimensionalityReductionResult> {
     try {
       // Get the dataset
       const dataset = await this.getDataset(datasetId);
-      
+
       // In a real implementation, this would use a machine learning library
       // For now, we'll create a mock dimensionality reduction result
-      
+
       // Get the number of components
-      const components = parameters.components || 2;
-      
+      const components = (parameters.components as number) || 2;
+
       // Create mock projected data
       const projectedData: number[][] = [];
-      
+
       // Generate random projected data
       for (let i = 0; i < dataset.rowCount; i++) {
         const point: number[] = [];
-        
+
         for (let j = 0; j < components; j++) {
           point.push(Math.random() * 10 - 5);
         }
-        
+
         projectedData.push(point);
       }
-      
+
       // Create mock explained variance
       const explainedVariance: number[] = [];
       let remainingVariance = 1.0;
-      
+
       for (let i = 0; i < components; i++) {
         // Generate a random value for the explained variance
         // that decreases for each component
@@ -353,7 +353,7 @@ export class UnsupervisedLearningService {
         explainedVariance.push(variance);
         remainingVariance -= variance;
       }
-      
+
       // Create the dimensionality reduction result
       const dimensionalityReductionResult: DimensionalityReductionResult = {
         id: uuidv4(),
@@ -366,10 +366,10 @@ export class UnsupervisedLearningService {
         createdAt: new Date().toISOString(),
         ownerId: this.userId
       };
-      
+
       // Cache the dimensionality reduction result
       await this.cacheDimensionalityReductionResult(dimensionalityReductionResult);
-      
+
       logger.info('Performed dimensionality reduction', {
         userId: this.userId,
         datasetId,
@@ -377,20 +377,13 @@ export class UnsupervisedLearningService {
         dimensionalityReductionId: dimensionalityReductionResult.id,
         components
       });
-      
+
       return dimensionalityReductionResult;
     } catch (error) {
-      logger.error('Error performing dimensionality reduction', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        datasetId,
-        algorithm
-      });
-      
-      throw error;
+      this.logAndRethrowError(error, { datasetId, algorithm });
     }
   }
-  
+
   /**
    * Perform anomaly detection
    * @param datasetId The dataset ID
@@ -401,41 +394,41 @@ export class UnsupervisedLearningService {
   public async performAnomalyDetection(
     datasetId: string,
     algorithm: UnsupervisedAlgorithmType,
-    parameters: Record<string, any>
+    parameters: AnomalyDetectionParameters
   ): Promise<AnomalyDetectionResult> {
     try {
       // Get the dataset
       const dataset = await this.getDataset(datasetId);
-      
+
       // In a real implementation, this would use a machine learning library
       // For now, we'll create a mock anomaly detection result
-      
+
       // Get the contamination (percentage of anomalies)
-      const contamination = parameters.contamination || 0.05;
-      
+      const contamination = (parameters.contamination as number) || 0.05;
+
       // Calculate the number of anomalies
       const numAnomalies = Math.round(dataset.rowCount * contamination);
-      
+
       // Generate random anomaly scores
       const scores: number[] = [];
-      
+
       for (let i = 0; i < dataset.rowCount; i++) {
         scores.push(Math.random());
       }
-      
+
       // Sort the scores to find the threshold
       const sortedScores = [...scores].sort((a, b) => a - b);
       const threshold = sortedScores[dataset.rowCount - numAnomalies];
-      
+
       // Identify anomalies
       const anomalies: number[] = [];
-      
+
       scores.forEach((score, index) => {
         if (score >= threshold) {
           anomalies.push(index);
         }
       });
-      
+
       // Create the anomaly detection result
       const anomalyDetectionResult: AnomalyDetectionResult = {
         id: uuidv4(),
@@ -448,10 +441,10 @@ export class UnsupervisedLearningService {
         createdAt: new Date().toISOString(),
         ownerId: this.userId
       };
-      
+
       // Cache the anomaly detection result
       await this.cacheAnomalyDetectionResult(anomalyDetectionResult);
-      
+
       logger.info('Performed anomaly detection', {
         userId: this.userId,
         datasetId,
@@ -459,20 +452,13 @@ export class UnsupervisedLearningService {
         anomalyDetectionId: anomalyDetectionResult.id,
         numAnomalies
       });
-      
+
       return anomalyDetectionResult;
     } catch (error) {
-      logger.error('Error performing anomaly detection', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        datasetId,
-        algorithm
-      });
-      
-      throw error;
+      this.logAndRethrowError(error, { datasetId, algorithm });
     }
   }
-  
+
   /**
    * Get a clustering result by ID
    * @param id The clustering result ID
@@ -482,30 +468,24 @@ export class UnsupervisedLearningService {
     try {
       // Check the cache first
       const cachedResult = await this.getCachedClusteringResult(id);
-      
+
       if (cachedResult) {
         logger.info('Retrieved clustering result from cache', {
           userId: this.userId,
           clusteringId: id
         });
-        
+
         return cachedResult;
       }
-      
+
       // In a real implementation, this would make an API call or database query
       // For now, we'll throw an error since we don't have a database
       throw new Error(`Clustering result not found: ${id}`);
     } catch (error) {
-      logger.error('Error getting clustering result', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        clusteringId: id
-      });
-      
-      throw error;
+      this.logAndRethrowError(error, { clusteringId: id });
     }
   }
-  
+
   /**
    * Get a dimensionality reduction result by ID
    * @param id The dimensionality reduction result ID
@@ -515,30 +495,24 @@ export class UnsupervisedLearningService {
     try {
       // Check the cache first
       const cachedResult = await this.getCachedDimensionalityReductionResult(id);
-      
+
       if (cachedResult) {
         logger.info('Retrieved dimensionality reduction result from cache', {
           userId: this.userId,
           dimensionalityReductionId: id
         });
-        
+
         return cachedResult;
       }
-      
+
       // In a real implementation, this would make an API call or database query
       // For now, we'll throw an error since we don't have a database
       throw new Error(`Dimensionality reduction result not found: ${id}`);
     } catch (error) {
-      logger.error('Error getting dimensionality reduction result', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        dimensionalityReductionId: id
-      });
-      
-      throw error;
+      this.logAndRethrowError(error, { dimensionalityReductionId: id });
     }
   }
-  
+
   /**
    * Get an anomaly detection result by ID
    * @param id The anomaly detection result ID
@@ -548,37 +522,30 @@ export class UnsupervisedLearningService {
     try {
       // Check the cache first
       const cachedResult = await this.getCachedAnomalyDetectionResult(id);
-      
+
       if (cachedResult) {
         logger.info('Retrieved anomaly detection result from cache', {
           userId: this.userId,
           anomalyDetectionId: id
         });
-        
+
         return cachedResult;
       }
-      
+
       // In a real implementation, this would make an API call or database query
       // For now, we'll throw an error since we don't have a database
       throw new Error(`Anomaly detection result not found: ${id}`);
     } catch (error) {
-      logger.error('Error getting anomaly detection result', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        anomalyDetectionId: id
-      });
-      
-      throw error;
+      this.logAndRethrowError(error, { anomalyDetectionId: id });
     }
   }
-  
+
   /**
    * Cache a dataset
    * @param dataset The dataset to cache
    */
   private async cacheDataset(dataset: Dataset): Promise<void> {
-    const cacheKey = this.getDatasetCacheKey(dataset.id);
-    this.cache[cacheKey] = JSON.stringify(dataset);
+    addDataset(dataset);
   }
 
   /**
@@ -587,12 +554,7 @@ export class UnsupervisedLearningService {
    * @returns The cached dataset, or null if not found
    */
   private async getCachedDataset(id: string): Promise<Dataset | null> {
-    const cacheKey = this.getDatasetCacheKey(id);
-    const cachedData = this.cache[cacheKey];
-    if (cachedData) {
-      return JSON.parse(cachedData) as Dataset;
-    }
-    return null;
+    return getDataset(id) || null;
   }
 
   /**
@@ -665,15 +627,6 @@ export class UnsupervisedLearningService {
   }
 
   /**
-   * Get the cache key for a dataset
-   * @param id The dataset ID
-   * @returns The cache key
-   */
-  private getDatasetCacheKey(id: string): string {
-    return `${this.cacheKeyPrefix}:dataset:${id}`;
-  }
-
-  /**
    * Get the cache key for a clustering result
    * @param id The clustering result ID
    * @returns The cache key
@@ -700,30 +653,23 @@ export class UnsupervisedLearningService {
     return `${this.cacheKeyPrefix}:anomaly-detection:${id}`;
   }
 
-  private cache: Record<string, string> = {};
 
   /**
-   * Delete a dataset by ID
-   * @param id The dataset ID
+   * Delete an anomaly detection result by ID
+   * @param id The anomaly detection result ID
    */
-  public async deleteDataset(id: string): Promise<void> {
+  public async deleteAnomalyDetectionResult(id: string): Promise<void> {
     try {
       // Check the cache first
-      const cacheKey = this.getDatasetCacheKey(id);
+      const cacheKey = this.getAnomalyDetectionResultCacheKey(id);
       delete this.cache[cacheKey];
 
-      logger.info('Deleted dataset from cache', {
+      logger.info('Deleted anomaly detection result from cache', {
         userId: this.userId,
-        datasetId: id
+        anomalyDetectionResultId: id
       });
     } catch (error) {
-      logger.error('Error deleting dataset', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        datasetId: id
-      });
-
-      throw error;
+      this.logAndRethrowError(error, { anomalyDetectionResultId: id });
     }
   }
 
@@ -742,13 +688,7 @@ export class UnsupervisedLearningService {
         clusteringResultId: id
       });
     } catch (error) {
-      logger.error('Error deleting clustering result', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        clusteringResultId: id
-      });
-
-      throw error;
+      this.logAndRethrowError(error, { clusteringResultId: id });
     }
   }
 
@@ -767,13 +707,7 @@ export class UnsupervisedLearningService {
         dimensionalityReductionResultId: id
       });
     } catch (error) {
-      logger.error('Error deleting dimensionality reduction result', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        dimensionalityReductionResultId: id
-      });
-
-      throw error;
+      this.logAndRethrowError(error, { dimensionalityReductionResultId: id });
     }
   }
 }

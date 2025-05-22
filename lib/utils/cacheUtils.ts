@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import redisClient from '@/lib/redis/client';
 
 /**
  * Cache key prefix for different types of data
@@ -15,11 +16,19 @@ export const CachePrefix = {
 /**
  * Default cache expiration times (in seconds)
  */
-export const CacheExpiration = {
-  SHORT: 60, // 1 minute
-  MEDIUM: 300, // 5 minutes
-  LONG: 1800, // 30 minutes
-};
+export enum CacheExpiration {
+  SHORT = 60,          // 1 minute
+  MEDIUM = 300,        // 5 minutes
+  LONG = 3600,         // 1 hour
+  VERY_LONG = 86400,   // 1 day
+}
+
+export enum CacheStrategy {
+  SIMPLE = 'simple',
+  STALE_WHILE_REVALIDATE = 'stale-while-revalidate',
+  WRITE_THROUGH = 'write-through',
+  WRITE_BEHIND = 'write-behind',
+}
 
 /**
  * Get data from cache
@@ -28,20 +37,21 @@ export const CacheExpiration = {
  */
 export async function getFromCache<T>(key: string): Promise<T | null> {
   try {
+    const data = await redisClient.get(key);
+    if (data) {
+      logger.info('Retrieved data from cache', { key });
+      return JSON.parse(data) as T;
+    } else {
+      logger.info('No data found in cache', { key });
       return null;
     }
-
-    if (!cachedData) {
-      return null;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      logger.warn('Error retrieving data from cache', { 
+        error: error.message,
+        key 
+      });
     }
-
-    logger.info('Retrieved data from cache', { key });
-    return JSON.parse(cachedData) as T;
-  } catch (error: any) {
-    logger.warn('Error retrieving data from cache', { 
-      error: error.message,
-      key 
-    });
     return null;
   }
 }
@@ -53,18 +63,18 @@ export async function getFromCache<T>(key: string): Promise<T | null> {
  * @param expiration Expiration time in seconds
  * @returns Success status
  */
-export async function setInCache(key: string, data: any, expiration: number = CacheExpiration.MEDIUM): Promise<boolean> {
+export async function setInCache<T>(key: string, data: T, expiration: number = CacheExpiration.MEDIUM): Promise<boolean> {
   try {
-      return false;
-    }
-
     logger.info('Stored data in cache', { key, expiration });
+    await redisClient.set(key, JSON.stringify(data), 'EX', expiration);
     return true;
-  } catch (error: any) {
-    logger.warn('Error storing data in cache', { 
-      error: error.message,
-      key 
-    });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      logger.warn('Error storing data in cache', { 
+        error: error.message,
+        key 
+      });
+    }
     return false;
   }
 }
@@ -76,16 +86,16 @@ export async function setInCache(key: string, data: any, expiration: number = Ca
  */
 export async function removeFromCache(key: string): Promise<boolean> {
   try {
-      return false;
-    }
-
     logger.info('Removed data from cache', { key });
+    await redisClient.del(key);
     return true;
-  } catch (error: any) {
-    logger.warn('Error removing data from cache', { 
-      error: error.message,
-      key 
-    });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      logger.warn('Error removing data from cache', { 
+        error: error.message,
+        key 
+      });
+    }
     return false;
   }
 }
@@ -97,41 +107,19 @@ export async function removeFromCache(key: string): Promise<boolean> {
  */
 export async function removeByPattern(pattern: string): Promise<boolean> {
   try {
-      return false;
-    }
-
-      logger.warn('Redis client does not support scan operation, cannot remove by pattern', { pattern });
-      return false;
-    }
-
-    // Use Redis SCAN to find keys matching the pattern
-    let cursor = '0';
-    let keys: string[] = [];
-
-    do {
-      cursor = result[0];
-      keys = keys.concat(result[1]);
-    } while (cursor !== '0');
-
+    logger.info('Removed keys by pattern from cache', { pattern });
+    const keys = await redisClient.keys(pattern);
     if (keys.length > 0) {
-      // Delete keys in batches to avoid issues with too many arguments
-      for (let i = 0; i < keys.length; i += 100) {
-        const batch = keys.slice(i, i + 100);
-        // Use multi to delete multiple keys in a single operation
-        batch.forEach(key => multi.del(key));
-        await multi.exec();
-      }
-      logger.info('Removed keys by pattern from cache', { pattern, count: keys.length });
-    } else {
-      logger.info('No keys found matching pattern', { pattern });
+      await redisClient.del(keys);
     }
-
     return true;
-  } catch (error: any) {
-    logger.warn('Error removing keys by pattern from cache', { 
-      error: error.message,
-      pattern 
-    });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      logger.warn('Error removing keys by pattern from cache', { 
+        error: error.message,
+        pattern 
+      });
+    }
     return false;
   }
 }

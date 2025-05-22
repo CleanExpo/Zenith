@@ -1,8 +1,16 @@
-export abstract class BaseDataAnalysisService {}
+export abstract class DataAnalysisService {
+  public async createVisualization(
+    params: VisualizationParams
+  ): Promise<VisualizationResult> {
+    throw new Error('Method not implemented.');
+  }
+}
 
 export interface DataAnalysisToolCredentials {
+  toolName: string;
   apiKey: string;
   userId: string;
+  cacheKeyPrefix: string;
   additionalCredentials?: Record<string, any>;
 }
 

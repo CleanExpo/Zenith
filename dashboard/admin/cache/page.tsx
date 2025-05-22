@@ -1,8 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import LoadingButton from 'ui-components/LoadingButton';
 import { toast } from 'react-toastify';
-import { Loader2, RefreshCw, Trash2, BarChart, Tag, Database, Clock, AlertTriangle, Zap } from 'lucide-react';
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Label, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Input, Switch, Progress, Alert, AlertTitle, AlertDescription, LoadingSkeleton, Tabs, TabsList, TabsTrigger, TabsContent } from 'ui-components';
-import { CacheExpiration, clearAllCache, invalidateByTags, warmupCache, getCacheStats } from 'lib/services/cacheService';
+import { Alert, AlertDescription, AlertTitle } from '@radix-ui/react-alert-dialog';
+import { BarChart, Clock, Database, RefreshCw, Tag, Trash2, Zap } from 'ui-components';
+import { BarChart, Clock, Database, RefreshCw, Tag, Trash2, Zap } from 'ui-components';
+import { BarChart, Clock, Database, RefreshCw, Tag, Trash2, Zap } from 'ui-components';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Label, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Input, Switch, Progress, LoadingSkeleton, Tabs, TabsList, TabsTrigger, TabsContent } from 'ui-components';
+import { CacheExpiration } from '@/lib/utils/advancedCacheUtils';
+import { getCacheStats, clearAllCache, invalidateByTags, warmupCache } from 'lib/services/cacheService';
 
 const CacheMonitoring = () => {
 const handleRefresh = useCallback(async () => {
@@ -18,16 +23,17 @@ const handleRefresh = useCallback(async () => {
     setRefreshing(false);
   }
 }, [getCacheStats, setStats, setRefreshing, toast]);
-  const [stats, setStats] = useState<{ totalEntries: number; totalSize: number; hitRate: number; avgAccessCount: number; tagStats: { [key: string]: number } } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [clearing, setClearing] = useState(false);
-  const [invalidating, setInvalidating] = useState(false);
-  const [warming, setWarming] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [customTag, setCustomTag] = useState('');
-  const [warmupType, setWarmupType] = useState('research_projects');
+const [stats, setStats] = useState<{ totalEntries: number; totalSize: number; hitRate: number; avgAccessCount: number; tagStats: { [key: string]: number } } | null>(null);
+const [error, setError] = useState<Error | null>(null);
+const [loading, setLoading] = useState(true);
+const [refreshing, setRefreshing] = useState(false);
+const [clearing, setClearing] = useState(false);
+const [invalidating, setInvalidating] = useState(false);
+const [warming, setWarming] = useState(false);
+const [activeTab, setActiveTab] = useState('overview');
+const [selectedTags, setSelectedTags] = useState<string[]>([]);
+const [customTag, setCustomTag] = useState('');
+const [warmupType, setWarmupType] = useState('research_projects');
 
 useEffect(() => {
   const fetchData = async () => {
@@ -47,42 +53,38 @@ useEffect(() => {
   fetchData();
 }, []);
 
-  const handleClearCache = async () => {
-    setClearing(true);
-    try {
-      const success = await invalidateAllCache();
-      if (success) {
-        await handleRefresh();
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to clear cache',
-        variant: 'destructive',
-      });
-    } finally {
-      setClearing(false);
+const handleClearCache = async () => {
+  setClearing(true);
+  try {
+    const success = await clearAllCache();
+    if (success) {
+      await handleRefresh();
     }
-  };
+  } catch (error) {
+toast.error('Failed to clear cache', {
+  id: 'clear-error',
+});
+  } finally {
+    setClearing(false);
+  }
+};
 
-  const handleInvalidateTags = async () => {
-    setInvalidating(true);
-    try {
-      const success = await invalidateByTags(selectedTags);
-      if (success) {
-        setSelectedTags([]);
-        await handleRefresh();
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to invalidate tags',
-        variant: 'destructive',
-      });
-    } finally {
-      setInvalidating(false);
+const handleInvalidateTags = async () => {
+  setInvalidating(true);
+  try {
+    const success = await invalidateByTags(selectedTags);
+    if (success) {
+      setSelectedTags([]);
+      await handleRefresh();
     }
-  };
+  } catch (error) {
+toast.error('Failed to invalidate tags', {
+  id: 'invalidate-error',
+});
+  } finally {
+    setInvalidating(false);
+  }
+};
 
   const handleAddCustomTag = () => {
     if (customTag.trim() && !selectedTags.includes(customTag)) {
@@ -103,11 +105,9 @@ useEffect(() => {
         await handleRefresh();
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to warm up cache',
-        variant: 'destructive',
-      });
+toast.error('Failed to warm up cache', {
+  id: 'warmup-error',
+});
     } finally {
       setWarming(false);
     }
@@ -132,32 +132,24 @@ useEffect(() => {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Cache Monitoring</h2>
         <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={handleRefresh} 
-            disabled={refreshing}
-            className="flex items-center"
-          >
-            {refreshing ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Refresh
-          </Button>
-          <Button 
-            variant="destructive" 
-            onClick={handleClearCache} 
-            disabled={clearing}
-            className="flex items-center"
-          >
-            {clearing ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Trash2 className="h-4 w-4 mr-2" />
-            )}
-            Clear All Cache
-          </Button>
+<LoadingButton
+  variant="outline"
+  onClick={handleRefresh}
+  disabled={refreshing}
+  loading={refreshing}
+  icon={<RefreshCw className="h-4 w-4 mr-2" />}
+>
+  Refresh
+</LoadingButton>
+<LoadingButton
+  variant="destructive"
+  onClick={handleClearCache}
+  disabled={clearing}
+  loading={clearing}
+  icon={<Trash2 className="h-4 w-4 mr-2" />}
+>
+  Clear All Cache
+</LoadingButton>
         </div>
       </div>
       
@@ -415,18 +407,14 @@ useEffect(() => {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button
-                      onClick={handleInvalidateTags}
-                      disabled={invalidating || selectedTags.length === 0}
-                      className="w-full"
-                    >
-                      {invalidating ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4 mr-2" />
-                      )}
-                      Invalidate Selected Tags
-                    </Button>
+<LoadingButton
+  onClick={handleInvalidateTags}
+  disabled={invalidating || selectedTags.length === 0}
+  loading={invalidating}
+  icon={<Trash2 className="h-4 w-4 mr-2" />}
+>
+  Invalidate Selected Tags
+</LoadingButton>
                   </CardFooter>
                 </Card>
               </div>
@@ -472,18 +460,14 @@ useEffect(() => {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button
-                      onClick={handleWarmupCache}
-                      disabled={warming}
-                      className="w-full"
-                    >
-                      {warming ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Zap className="h-4 w-4 mr-2" />
-                      )}
-                      Warm Up Cache
-                    </Button>
+<LoadingButton
+  onClick={handleWarmupCache}
+  disabled={warming}
+  loading={warming}
+  icon={<Zap className="h-4 w-4 mr-2" />}
+>
+  Warm Up Cache
+</LoadingButton>
                   </CardFooter>
                 </Card>
                 

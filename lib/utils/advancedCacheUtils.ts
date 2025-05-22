@@ -2,6 +2,7 @@ import { logger } from '@/lib/logger';
 import { 
   CachePrefix, 
   CacheExpiration, 
+  CacheStrategy, 
   getFromCache, 
   setInCache, 
   removeFromCache, 
@@ -12,13 +13,6 @@ import {
 /**
  * Cache strategies for different types of data
  */
-export enum CacheStrategy {
-  SIMPLE = 'simple',           // Basic caching with TTL
-  STALE_WHILE_REVALIDATE = 'stale-while-revalidate', // Return stale data while fetching fresh data
-  WRITE_THROUGH = 'write-through', // Write to cache and database simultaneously
-  WRITE_BEHIND = 'write-behind',   // Write to cache and asynchronously to database
-  CACHE_ASIDE = 'cache-aside',     // Application manages cache and database separately
-}
 
 /**
  * Cache tags for grouping related cache entries
@@ -375,29 +369,29 @@ export async function getCacheStats(): Promise<{
     let cursor = '0';
     let metadataKeys: string[] = [];
     
-do {
-  const result = await getFromCache<[string, string[]]>(`metadata:*`);
-  if (result) {
-    cursor = result[0];
-    metadataKeys = metadataKeys.concat(result[1]);
-  } else {
-    cursor = '0';
-  }
-} while (cursor !== '0');
+    do {
+      const result = await getFromCache<[string, string[]]>(`metadata:*`);
+      if (result) {
+        cursor = result[0];
+        metadataKeys = metadataKeys.concat(result[1]);
+      } else {
+        cursor = '0';
+      }
+    } while (cursor !== '0');
     
     // Get all tag keys
     cursor = '0';
     let tagKeys: string[] = [];
     
-do {
-  const result = await getFromCache<[string, string[]]>(`tags:*`);
-  if (result) {
-    cursor = result[0];
-    tagKeys = tagKeys.concat(result[1]);
-  } else {
-    cursor = '0';
-  }
-} while (cursor !== '0');
+    do {
+      const result = await getFromCache<[string, string[]]>(`tags:*`);
+      if (result) {
+        cursor = result[0];
+        tagKeys = tagKeys.concat(result[1]);
+      } else {
+        cursor = '0';
+      }
+    } while (cursor !== '0');
     
     // Process metadata
     let totalSize = 0;

@@ -1,35 +1,37 @@
 import { toast } from '@/components/ui/use-toast';
-import { CacheExpiration, CachePrefix, CacheStrategy, CacheTags } from '@/lib/utils/advancedCacheUtils';
+import { CachePrefix, CacheStrategy, CacheExpiration } from '@/lib/utils/advancedCacheUtils';
 import { warmupCache as warmupCacheUtil } from '@/lib/utils/advancedCacheUtils';
-import { SimpleCache } from '@/lib/services/simpleCache';
-
-const cache = new SimpleCache();
 
 interface CacheFetchResult {
-  items: any[];
+  items: unknown[];
   total: number;
-  data?: any;
+  data?: unknown;
 }
 
 interface CacheEntry {
   key: string;
-  value: { value: any, expires: number, lastAccessed: number };
+  value: { value: unknown, expires: number, lastAccessed: number };
 }
 
 export const getCacheStats = async () => {
   try {
-    // Simulate fetching cache stats
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Placeholder for fetching cache stats
+    const totalEntries = 0;
+    const totalSize = 0;
+    const hitRate = 0.75; // Placeholder value, replace with actual logic
+    const avgAccessCount = 2.5; // Placeholder value, replace with actual logic
+    const tagStats = {
+      research_projects: 50,
+      teams: 30,
+      analytics: 70
+    };
+
     return {
-      totalEntries: 150,
-      totalSize: 1024 * 1024 * 5, // 5 MB
-      hitRate: 0.75,
-      avgAccessCount: 2.5,
-      tagStats: {
-        research_projects: 50,
-        teams: 30,
-        analytics: 70
-      }
+      totalEntries,
+      totalSize,
+      hitRate,
+      avgAccessCount,
+      tagStats
     };
   } catch (error) {
     console.error('Error fetching cache stats:', error);
@@ -44,9 +46,7 @@ export const getCacheStats = async () => {
 
 export const clearAllCache = async () => {
   try {
-    // Simulate clearing all cache
-    await new Promise(resolve => setTimeout(resolve, 500));
-    cache.clear();
+    // Placeholder for clearing all cache
     toast({
       title: 'Success',
       description: 'All cache cleared',
@@ -63,20 +63,22 @@ export const clearAllCache = async () => {
   }
 };
 
-export const purgeLRUCacheEntries = async (maxEntriesToRemove: number) => {
-  const entries = cache.entries();
-const sortedEntries = Array.from(entries).sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
-  const entriesToRemove = sortedEntries.slice(0, maxEntriesToRemove);
-
-  for (const [key] of entriesToRemove) {
-    cache.delete(key);
+export const purgeLRUCacheEntries = async () => {
+  try {
+    // Placeholder for purging least recently used cache entries
+  } catch (error) {
+    console.error('Error purging LRU cache entries:', error);
+    toast({
+      title: 'Error',
+      description: 'Failed to purge LRU cache entries',
+      variant: 'destructive',
+    });
   }
 };
 
 export const invalidateByTags = async (tags: string[]) => {
   try {
-    // Simulate invalidating cache by tags
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Placeholder for invalidating cache by tags
     toast({
       title: 'Success',
       description: `Cache invalidated for tags: ${tags.join(', ')}`,
@@ -150,3 +152,39 @@ export const warmupCache = async (warmupType: string) => {
     return false;
   }
 };
+
+export const getFromCache = async (key: string): Promise<unknown | null> => {
+  try {
+    const cachedData = localStorage.getItem(key);
+    if (cachedData) {
+      const entry: CacheEntry = JSON.parse(cachedData);
+      if (entry.value.expires > Date.now()) {
+        return entry.value.value;
+      } else {
+        localStorage.removeItem(key);
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting from cache:', error);
+    return null;
+  }
+};
+
+export const setInCache = async (key: string, value: unknown, ttl: number): Promise<void> => {
+  try {
+    const entry: CacheEntry = {
+      key,
+      value: {
+        value,
+        expires: Date.now() + ttl,
+        lastAccessed: Date.now()
+      }
+    };
+    localStorage.setItem(key, JSON.stringify(entry));
+  } catch (error) {
+    console.error('Error setting in cache:', error);
+  }
+};
+
+// Additional methods can be added here

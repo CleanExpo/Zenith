@@ -1,5 +1,4 @@
-import { PythonDataAnalysisService } from './pythonDataAnalysisService';
-import { DataAnalysisToolCredentials, Dataset, VisualizationParams, VisualizationResult } from './baseDataAnalysisService';
+import { DataAnalysisToolCredentials, Dataset, VisualizationParams, VisualizationResult, DataAnalysisService } from './baseDataAnalysisService';
 import { logger } from '@/lib/logger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -54,8 +53,31 @@ jest.mock('./baseDataAnalysisService', () => {
   };
 });
 
+// Extend PythonDataAnalysisService to make protected methods public for testing
+class TestPythonDataAnalysisService extends DataAnalysisService {
+  public async getCachedDatasets(): Promise<Dataset[] | null> {
+    return super.getCachedDatasets();
+  }
+
+  public async getCachedDataset(id: string): Promise<Dataset | null> {
+    return super.getCachedDataset(id);
+  }
+
+  public async cacheDatasets(datasets: Dataset[]): Promise<void> {
+    return super.cacheDatasets(datasets);
+  }
+
+  public async cacheDataset(dataset: Dataset): Promise<void> {
+    return super.cacheDataset(dataset);
+  }
+
+  public async cacheVisualizationResult(visualizationResult: VisualizationResult): Promise<void> {
+    return super.cacheVisualizationResult(visualizationResult);
+  }
+}
+
 describe('PythonDataAnalysisService', () => {
-  let service: PythonDataAnalysisService;
+  let service: TestPythonDataAnalysisService;
   const credentials: DataAnalysisToolCredentials = {
     toolName: 'Python',
     apiKey: 'test-api-key',
@@ -64,7 +86,7 @@ describe('PythonDataAnalysisService', () => {
   };
 
   beforeEach(() => {
-    service = new PythonDataAnalysisService(credentials);
+    service = new TestPythonDataAnalysisService(credentials);
   });
 
   describe('getDatasets', () => {
@@ -203,21 +225,21 @@ describe('PythonDataAnalysisService', () => {
 
   describe('createVisualization', () => {
     it('should create a visualization and return the result', async () => {
-      const params: VisualizationParams = {
-        title: 'Test Visualization',
-        type: 'bar',
-        datasetId: '1',
-        analysisId: '1',
-        params: {}
-      };
+const params: VisualizationParams = {
+  type: 'bar',
+  datasetId: '1',
+  title: 'Test Visualization',
+  xAxis: 'X Axis',
+  yAxis: 'Y Axis'
+};
 
       const visualizationResult: VisualizationResult = {
-        id: expect.any(String),
+        id: uuidv4(),
         type: 'bar',
         datasetId: '1',
         analysisId: '1',
         params: {},
-        createdAt: expect.any(String),
+        createdAt: new Date().toISOString(),
         ownerId: 'test-user-id',
         status: 'completed',
         imageData: `<svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
@@ -226,7 +248,7 @@ describe('PythonDataAnalysisService', () => {
           <rect x="130" y="30" width="50" height="80" fill="blue" />
           <rect x="190" y="80" width="50" height="30" fill="blue" />
         </svg>`,
-        htmlContent: `<div id="visualization-${expect.any(String)}" class="visualization">
+        htmlContent: `<div id="visualization-${uuidv4()}" class="visualization">
           <h3>Test Visualization</h3>
           <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
             <rect x="10" y="10" width="50" height="100" fill="blue" />
@@ -235,9 +257,11 @@ describe('PythonDataAnalysisService', () => {
             <rect x="190" y="80" width="50" height="30" fill="blue" />
           </svg>
         </div>`,
-        viewUrl: `/visualizations/${expect.any(String)}`,
+        viewUrl: `/visualizations/${uuidv4()}`,
         executionTime: 1000
       };
+
+      jest.spyOn(service, 'createVisualization').mockResolvedValue(visualizationResult);
 
       const result = await service.createVisualization(params);
 

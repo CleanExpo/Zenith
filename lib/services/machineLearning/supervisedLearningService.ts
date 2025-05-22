@@ -12,7 +12,8 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export enum ModelType {
   CLASSIFICATION = 'classification',
-  REGRESSION = 'regression'
+  REGRESSION = 'regression',
+  CLUSTERING = 'clustering'
 }
 
 /**
@@ -80,8 +81,8 @@ export interface Model {
   type: ModelType;
   algorithm: AlgorithmType;
   datasetId: string;
-  parameters: Record<string, any>;
-  metrics: Record<string, number>;
+  parameters: Record<string, unknown>;
+  metrics: Record<string, unknown>;
   featureImportance?: Record<string, number>;
   createdAt: string;
   updatedAt: string;
@@ -97,10 +98,10 @@ export interface Model {
 export interface Prediction {
   id: string;
   modelId: string;
-  input: Record<string, any>;
-  output: any;
+  input: Record<string, unknown>;
+  output: unknown;
   confidence?: number;
-  explanation?: Record<string, any>;
+  explanation?: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -134,85 +135,85 @@ export class SupervisedLearningService {
    * @param dataSource The data source
    * @returns The created dataset
    */
-  public async createDataset(
-    name: string,
-    description: string,
-    features: Feature[],
-    targetFeature: string,
-    rowCount: number,
-    tags?: string[],
-    dataSource?: string
-  ): Promise<Dataset> {
-    try {
-      // Create the dataset
-      const dataset: Dataset = {
-        id: uuidv4(),
-        name,
-        description,
-        features,
-        targetFeature,
-        rowCount,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        ownerId: this.userId,
-        tags,
-        dataSource
-      };
-      
-      // Cache the dataset
-      await this.cacheDataset(dataset);
-      
-      logger.info('Created dataset', {
-        userId: this.userId,
-        datasetId: dataset.id,
-        name,
-        rowCount
-      });
-      
-      return dataset;
-    } catch (error) {
-      logger.error('Error creating dataset', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        name
-      });
-      
-      throw error;
-    }
+public async createDataset(
+  name: string,
+  description: string,
+  features: Feature[],
+  targetFeature: string,
+  rowCount: number,
+  tags?: string[],
+  dataSource?: string
+): Promise<Dataset> {
+  try {
+    // Create the dataset
+    const dataset: Dataset = {
+      id: uuidv4(),
+      name,
+      description,
+      features,
+      targetFeature,
+      rowCount,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ownerId: this.userId,
+      tags,
+      dataSource
+    };
+    
+    // Cache the dataset
+    await this.cacheDataset(dataset, this.getDatasetCacheKey(dataset.id));
+    
+    logger.info('Created dataset', {
+      userId: this.userId,
+      datasetId: dataset.id,
+      name,
+      rowCount
+    });
+    
+    return dataset;
+  } catch (error) {
+    logger.error('Error creating dataset', {
+      error: error instanceof Error ? error.message : String(error),
+      userId: this.userId,
+      name
+    });
+    
+    throw error;
   }
+}
   
   /**
    * Get a dataset by ID
    * @param id The dataset ID
    * @returns The dataset
    */
-  public async getDataset(id: string): Promise<Dataset> {
-    try {
-      // Check the cache first
-      const cachedDataset = await this.getCachedDataset(id);
-      
-      if (cachedDataset) {
-        logger.info('Retrieved dataset from cache', {
-          userId: this.userId,
-          datasetId: id
-        });
-        
-        return cachedDataset;
-      }
-      
-      // In a real implementation, this would make an API call or database query
-      // For now, we'll throw an error since we don't have a database
-      throw new Error(`Dataset not found: ${id}`);
-    } catch (error) {
-      logger.error('Error getting dataset', {
-        error: error instanceof Error ? error.message : String(error),
+public async getDataset(id: string): Promise<Dataset> {
+  try {
+    // Check the cache first
+    const cachedDataset = await this.getCachedDataset(id);
+    
+    if (cachedDataset) {
+      logger.info('Retrieved dataset from cache', {
         userId: this.userId,
         datasetId: id
       });
       
-      throw error;
+      return cachedDataset;
     }
+    
+    // In a real implementation, this would make an API call or database query
+    // For now, we'll throw an error since we don't have a database
+    throw new Error(`Dataset not found: ${id}`);
+  } catch (error) {
+    logger.error('Error getting dataset', {
+      error: error instanceof Error ? error.message : String(error),
+      userId: this.userId,
+      datasetId: id
+    });
+    
+    throw error;
   }
+}
   
   /**
    * Update a dataset
@@ -248,7 +249,7 @@ export class SupervisedLearningService {
       };
       
       // Cache the updated dataset
-      await this.cacheDataset(updatedDataset);
+await this.cacheDataset(updatedDataset, this.getDatasetCacheKey(updatedDataset.id));
       
       logger.info('Updated dataset', {
         userId: this.userId,
@@ -308,138 +309,6 @@ export class SupervisedLearningService {
    * @param parameters The model parameters
    * @returns The created model
    */
-  public async trainModel(
-    name: string,
-    description: string,
-    type: ModelType,
-    algorithm: AlgorithmType,
-    datasetId: string,
-    parameters: Record<string, any>
-  ): Promise<Model> {
-    try {
-      // Get the dataset
-      const dataset = await this.getDataset(datasetId);
-      
-      // Create the model
-      const model: Model = {
-        id: uuidv4(),
-        name,
-        description,
-        type,
-        algorithm,
-        datasetId,
-        parameters,
-        metrics: {},
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        ownerId: this.userId,
-        status: 'training',
-        version: 1
-      };
-      
-      // Cache the model
-      await this.cacheModel(model);
-      
-      logger.info('Created model', {
-        userId: this.userId,
-        modelId: model.id,
-        name,
-        type,
-        algorithm,
-        datasetId
-      });
-      
-      // In a real implementation, this would start a training job
-      // For now, we'll simulate training by updating the model after a delay
-      setTimeout(async () => {
-        try {
-          // Generate mock metrics based on the algorithm
-          const metrics: Record<string, number> = {};
-          const featureImportance: Record<string, number> = {};
-          
-          if (type === ModelType.CLASSIFICATION) {
-            metrics.accuracy = 0.85 + Math.random() * 0.1;
-            metrics.precision = 0.82 + Math.random() * 0.1;
-            metrics.recall = 0.79 + Math.random() * 0.1;
-            metrics.f1 = 0.80 + Math.random() * 0.1;
-          } else {
-            metrics.r2 = 0.75 + Math.random() * 0.2;
-            metrics.mse = 0.1 + Math.random() * 0.1;
-            metrics.mae = 0.08 + Math.random() * 0.05;
-          }
-          
-          // Generate mock feature importance
-          dataset.features.forEach(feature => {
-            if (feature.name !== dataset.targetFeature) {
-              featureImportance[feature.name] = Math.random();
-            }
-          });
-          
-          // Normalize feature importance
-          const totalImportance = Object.values(featureImportance).reduce((sum, value) => sum + value, 0);
-          Object.keys(featureImportance).forEach(key => {
-            featureImportance[key] = featureImportance[key] / totalImportance;
-          });
-          
-          // Update the model
-          const updatedModel: Model = {
-            ...model,
-            status: 'trained',
-            metrics,
-            featureImportance,
-            updatedAt: new Date().toISOString()
-          };
-          
-          // Cache the updated model
-          await this.cacheModel(updatedModel);
-          
-          logger.info('Trained model', {
-            userId: this.userId,
-            modelId: model.id,
-            name,
-            type,
-            algorithm,
-            datasetId,
-            metrics
-          });
-        } catch (error) {
-          // Update the model with an error
-          const updatedModel: Model = {
-            ...model,
-            status: 'failed',
-            errorMessage: error instanceof Error ? error.message : String(error),
-            updatedAt: new Date().toISOString()
-          };
-          
-          // Cache the updated model
-          await this.cacheModel(updatedModel);
-          
-          logger.error('Error training model', {
-            error: error instanceof Error ? error.message : String(error),
-            userId: this.userId,
-            modelId: model.id,
-            name,
-            type,
-            algorithm,
-            datasetId
-          });
-        }
-      }, 2000);
-      
-      return model;
-    } catch (error) {
-      logger.error('Error creating model', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        name,
-        type,
-        algorithm,
-        datasetId
-      });
-      
-      throw error;
-    }
-  }
   
   /**
    * Get a model by ID
@@ -499,7 +368,7 @@ export class SupervisedLearningService {
       };
       
       // Cache the updated model
-      await this.cacheModel(updatedModel);
+await this.cacheModel(updatedModel, this.getModelCacheKey(updatedModel.id));
       
       logger.info('Updated model', {
         userId: this.userId,
@@ -555,131 +424,264 @@ export class SupervisedLearningService {
    * @param input The input data
    * @returns The prediction
    */
-  public async predict(
-    modelId: string,
-    input: Record<string, any>
-  ): Promise<Prediction> {
-    try {
-      // Get the model
-      const model = await this.getModel(modelId);
+public async predict(
+  modelId: string,
+  input: Record<string, unknown>
+): Promise<Prediction> {
+  try {
+    // Get the model
+    const model = await this.getModel(modelId);
+    
+    // Check if the model is trained
+    if (model.status !== 'trained') {
+      throw new Error(`Model is not trained: ${modelId}`);
+    }
+    
+    // Get the dataset
+    const dataset = await this.getDataset(model.datasetId);
+    
+    // In a real implementation, this would use the trained model to make a prediction
+    // For now, we'll create a mock prediction
+    
+    let output: unknown;
+    let confidence: number | undefined;
+    let explanation: Record<string, unknown> | undefined;
+    
+    if (model.type === ModelType.CLASSIFICATION) {
+      // For classification, return a class label and probabilities
+      const classes = ['class_a', 'class_b', 'class_c'];
+      const probabilities: Record<string, number> = {};
       
-      // Check if the model is trained
-      if (model.status !== 'trained') {
-        throw new Error(`Model is not trained: ${modelId}`);
-      }
+      // Generate random probabilities
+      let totalProb = 0;
+      classes.forEach(cls => {
+        probabilities[cls] = Math.random();
+        totalProb += probabilities[cls];
+      });
       
-      // Get the dataset
-      const dataset = await this.getDataset(model.datasetId);
+      // Normalize probabilities
+      classes.forEach(cls => {
+        probabilities[cls] = probabilities[cls] / totalProb;
+      });
       
-      // In a real implementation, this would use the trained model to make a prediction
-      // For now, we'll create a mock prediction
+      // Find the class with the highest probability
+      let maxProb = 0;
+      let predictedClass = '';
       
-      let output: any;
-      let confidence: number | undefined;
-      let explanation: Record<string, any> | undefined;
-      
-      if (model.type === ModelType.CLASSIFICATION) {
-        // For classification, return a class label and probabilities
-        const classes = ['class_a', 'class_b', 'class_c'];
-        const probabilities: Record<string, number> = {};
-        
-        // Generate random probabilities
-        let totalProb = 0;
-        classes.forEach(cls => {
-          probabilities[cls] = Math.random();
-          totalProb += probabilities[cls];
-        });
-        
-        // Normalize probabilities
-        classes.forEach(cls => {
-          probabilities[cls] = probabilities[cls] / totalProb;
-        });
-        
-        // Find the class with the highest probability
-        let maxProb = 0;
-        let predictedClass = '';
-        
-        Object.entries(probabilities).forEach(([cls, prob]) => {
-          if (prob > maxProb) {
-            maxProb = prob;
-            predictedClass = cls;
-          }
-        });
-        
-        output = predictedClass;
-        confidence = maxProb;
-        explanation = {
-          probabilities,
-          featureContributions: {}
-        };
-        
-        // Generate feature contributions
-        if (model.featureImportance) {
-          Object.entries(model.featureImportance).forEach(([feature, importance]) => {
-            explanation!.featureContributions[feature] = importance * (Math.random() * 2 - 1);
-          });
+      Object.entries(probabilities).forEach(([cls, prob]) => {
+        if (prob > maxProb) {
+          maxProb = prob;
+          predictedClass = cls;
         }
-      } else {
-        // For regression, return a numeric value
-        // Use a simple weighted sum of inputs as a mock prediction
-        let sum = 0;
-        let count = 0;
-        
-        Object.entries(input).forEach(([key, value]) => {
-          if (typeof value === 'number') {
-            sum += value;
-            count++;
-          }
-        });
-        
-        // Add some randomness
-        output = count > 0 ? sum / count + (Math.random() * 10 - 5) : Math.random() * 100;
-        
-        // Generate feature contributions
-        explanation = {
-          featureContributions: {}
-        };
-        
-        if (model.featureImportance) {
-          Object.entries(model.featureImportance).forEach(([feature, importance]) => {
-            explanation!.featureContributions[feature] = importance * (Math.random() * 2 - 1);
-          });
-        }
-      }
+      });
       
-      // Create the prediction
-      const prediction: Prediction = {
-        id: uuidv4(),
-        modelId,
-        input,
-        output,
-        confidence,
-        explanation,
-        createdAt: new Date().toISOString()
+      output = predictedClass;
+      confidence = maxProb;
+      explanation = {
+        probabilities,
+        featureContributions: {}
       };
       
-      // Cache the prediction
-      await this.cachePrediction(prediction);
+      // Generate feature contributions
+      if (model.featureImportance) {
+        Object.entries(model.featureImportance).forEach(([feature, importance]) => {
+          explanation!.featureContributions[feature] = importance * (Math.random() * 2 - 1);
+        });
+      }
+    } else {
+      // For regression, return a numeric value
+      // Use a simple weighted sum of inputs as a mock prediction
+      let sum = 0;
+      let count = 0;
       
-      logger.info('Made prediction', {
-        userId: this.userId,
-        modelId,
-        predictionId: prediction.id,
-        output,
-        confidence
-      });
+      for (const [key, value] of Object.entries(input)) {
+        if (typeof value === 'number') {
+          sum += value;
+          count++;
+        }
+      }
       
-      return prediction;
-    } catch (error) {
-      logger.error('Error making prediction', {
-        error: error instanceof Error ? error.message : String(error),
-        userId: this.userId,
-        modelId
-      });
+      // Add some randomness
+      output = count > 0 ? sum / count + (Math.random() * 10 - 5) : Math.random() * 100;
       
-      throw error;
+      // Generate feature contributions
+      explanation = {
+        featureContributions: {}
+      };
+      
+      if (model.featureImportance) {
+        Object.entries(model.featureImportance).forEach(([feature, importance]) => {
+          explanation!.featureContributions[feature] = importance * (Math.random() * 2 - 1);
+        });
+      }
     }
+    
+    // Create the prediction
+    const prediction: Prediction = {
+      id: uuidv4(),
+      modelId,
+      input,
+      output,
+      confidence,
+      explanation,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Cache the prediction
+    await this.cachePrediction(prediction);
+    
+    logger.info('Made prediction', {
+      userId: this.userId,
+      modelId,
+      predictionId: prediction.id,
+      output,
+      confidence
+    });
+    
+    return prediction;
+  } catch (error) {
+    logger.error('Error making prediction', {
+      error: error instanceof Error ? error.message : String(error),
+      userId: this.userId,
+      modelId
+    });
+    
+    throw error;
   }
+}
+
+public async trainModel(
+  name: string,
+  description: string,
+  type: ModelType,
+  algorithm: AlgorithmType,
+  datasetId: string,
+  parameters: Record<string, unknown>
+): Promise<Model> {
+  try {
+    // Get the dataset
+    const dataset = await this.getDataset(datasetId);
+    
+    // Create the model
+    const model: Model = {
+      id: uuidv4(),
+      name,
+      description,
+      type,
+      algorithm,
+      datasetId,
+      parameters,
+      metrics: {},
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ownerId: this.userId,
+      status: 'training',
+      version: 1
+    };
+    
+    // Cache the model
+await this.cacheModel(model, this.getModelCacheKey(model.id));
+    
+    logger.info('Created model', {
+      userId: this.userId,
+      modelId: model.id,
+      name,
+      type,
+      algorithm,
+      datasetId
+    });
+    
+    // In a real implementation, this would start a training job
+    // For now, we'll simulate training by updating the model after a delay
+    setTimeout(async () => {
+      try {
+        // Generate mock metrics based on the algorithm
+        const metrics: Record<string, unknown> = {};
+        const featureImportance: Record<string, number> = {};
+        
+        if (type === ModelType.CLASSIFICATION) {
+          metrics['accuracy'] = 0.85 + Math.random() * 0.1;
+          metrics['precision'] = 0.82 + Math.random() * 0.1;
+          metrics['recall'] = 0.79 + Math.random() * 0.1;
+          metrics['f1'] = 0.80 + Math.random() * 0.1;
+        } else {
+          metrics['r2'] = 0.75 + Math.random() * 0.2;
+          metrics['mse'] = 0.1 + Math.random() * 0.1;
+          metrics['mae'] = 0.08 + Math.random() * 0.05;
+        }
+        
+        // Generate mock feature importance
+        dataset.features.forEach(feature => {
+          if (feature.name !== dataset.targetFeature) {
+            featureImportance[feature.name] = Math.random();
+          }
+        });
+        
+        // Normalize feature importance
+        const totalImportance = Object.values(featureImportance).reduce((sum, value) => sum + value, 0);
+        Object.keys(featureImportance).forEach(key => {
+          featureImportance[key] = featureImportance[key] / totalImportance;
+        });
+        
+        // Update the model
+        const updatedModel: Model = {
+          ...model,
+          status: 'trained',
+          metrics,
+          featureImportance,
+          updatedAt: new Date().toISOString()
+        };
+        
+        // Cache the updated model
+await this.cacheModel(updatedModel, this.getModelCacheKey(updatedModel.id));
+        
+        logger.info('Trained model', {
+          userId: this.userId,
+          modelId: model.id,
+          name,
+          type,
+          algorithm,
+          datasetId,
+          metrics
+        });
+      } catch (error) {
+        // Update the model with an error
+        const updatedModel: Model = {
+          ...model,
+          status: 'failed',
+          errorMessage: error instanceof Error ? error.message : String(error),
+          updatedAt: new Date().toISOString()
+        };
+        
+        // Cache the updated model
+await this.cacheModel(updatedModel, this.getModelCacheKey(updatedModel.id));
+        
+        logger.error('Error training model', {
+          error: error instanceof Error ? error.message : String(error),
+          userId: this.userId,
+          modelId: model.id,
+          name,
+          type,
+          algorithm,
+          datasetId
+        });
+      }
+    }, 2000);
+    
+    return model;
+  } catch (error) {
+    logger.error('Error creating model', {
+      error: error instanceof Error ? error.message : String(error),
+      userId: this.userId,
+      name,
+      type,
+      algorithm,
+      datasetId
+    });
+    
+    throw error;
+  }
+}
   
   /**
    * Evaluate a model
@@ -743,47 +745,45 @@ export class SupervisedLearningService {
    * Cache a dataset
    * @param dataset The dataset to cache
    */
-  private async cacheDataset(dataset: Dataset): Promise<void> {
-    const cacheKey = this.getDatasetCacheKey(dataset.id);
-    const cache = (globalThis as any).cache || {};
-    cache[cacheKey] = JSON.stringify(dataset);
-    (globalThis as any).cache = cache;
-    logger.info('Cached dataset', {
-      userId: this.userId,
-      datasetId: dataset.id,
-      cacheKey
-    });
-  }
-  
+public async cacheDataset(dataset: Dataset, key: string): Promise<void> {
+  const cache = (globalThis as any).cache || {};
+  cache[key] = JSON.stringify(dataset);
+  (globalThis as any).cache = cache;
+  logger.info('Cached dataset', {
+    userId: this.userId,
+    datasetId: dataset.id,
+    cacheKey: key
+  });
+}
   /**
    * Get a cached dataset
    * @param id The dataset ID
    * @returns The cached dataset, or null if not found
    */
-public async getCachedDataset(id: string): Promise<Dataset | null> {
-  const cacheKey = this.getDatasetCacheKey(id);
-  const cachedData = await this.getFromCache(cacheKey);
-  
-  if (cachedData) {
-    return JSON.parse(cachedData) as Dataset;
+  public async getCachedDataset(id: string): Promise<Dataset | null> {
+    const cacheKey = this.getDatasetCacheKey(id);
+    const cachedData = await this.getFromCache(cacheKey);
+    
+    if (cachedData) {
+      return JSON.parse(cachedData) as Dataset;
+    }
+    
+    return null;
   }
-  
-  return null;
-}
   
   /**
    * Cache a model
    * @param model The model to cache
    */
-public async cacheModel(model: Model): Promise<void> {
-  const cacheKey = this.getModelCacheKey(model.id);
+public async cacheModel(model: Model, key?: string): Promise<void> {
+  const cacheKey = key || this.getModelCacheKey(model.id);
   const cache = (globalThis as any).cache || {};
   cache[cacheKey] = JSON.stringify(model);
   (globalThis as any).cache = cache;
   logger.info('Cached model', {
     userId: this.userId,
     modelId: model.id,
-    cacheKey
+    cacheKey: cacheKey
   });
 }
   
@@ -807,17 +807,17 @@ public async cacheModel(model: Model): Promise<void> {
    * Cache a prediction
    * @param prediction The prediction to cache
    */
-  private async cachePrediction(prediction: Prediction): Promise<void> {
-    const cacheKey = this.getPredictionCacheKey(prediction.id);
-    const cache = (globalThis as any).cache || {};
-    cache[cacheKey] = JSON.stringify(prediction);
-    (globalThis as any).cache = cache;
-    logger.info('Cached prediction', {
-      userId: this.userId,
-      predictionId: prediction.id,
-      cacheKey
-    });
-  }
+private async cachePrediction(prediction: Prediction): Promise<void> {
+  const cacheKey = this.getPredictionCacheKey(prediction.id);
+  const cache = (globalThis as any).cache || {};
+  cache[cacheKey] = JSON.stringify(prediction);
+  (globalThis as any).cache = cache;
+  logger.info('Cached prediction', {
+    userId: this.userId,
+    predictionId: prediction.id,
+    cacheKey: cacheKey
+  });
+}
   
   /**
    * Get the cache key for a dataset
@@ -851,9 +851,24 @@ public async cacheModel(model: Model): Promise<void> {
    * @param key The cache key
    * @returns The cached data, or null if not found
    */
-private async getFromCache(key: string): Promise<string | null> {
-  // Assuming a simple in-memory cache for demonstration purposes
-  const cache = (globalThis as any).cache || {};
-  return cache[key] || null;
-}
+  private async getFromCache(key: string): Promise<string | null> {
+    const cache = (globalThis as any).cache || {};
+    return cache[key] || null;
+  }
+
+  /**
+   * Get a cached prediction
+   * @param id The prediction ID
+   * @returns The cached prediction, or null if not found
+   */
+public async getCachedPrediction(id: string): Promise<Prediction | null> {
+    const cacheKey = this.getPredictionCacheKey(id);
+    const cachedData = await this.getFromCache(cacheKey);
+    
+    if (cachedData) {
+      return JSON.parse(cachedData) as Prediction;
+    }
+    
+    return null;
+  }
 }

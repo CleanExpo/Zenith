@@ -36,7 +36,7 @@ export function PaginationControls({
   // Calculate the range of page buttons to show
   const halfMaxButtons = Math.floor(maxPageButtons / 2);
   let startPage = Math.max(1, currentPage - halfMaxButtons);
-  let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+  const endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
   
   // Adjust if we're near the end
   if (endPage - startPage + 1 < maxPageButtons) {

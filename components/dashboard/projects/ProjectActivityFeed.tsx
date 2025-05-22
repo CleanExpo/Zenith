@@ -157,7 +157,7 @@ export default function ProjectActivityFeed({ projectId }: ProjectActivityFeedPr
 
   const getEntityTypeBadge = (entityType: string) => {
     let color = '';
-    let label = entityType.charAt(0).toUpperCase() + entityType.slice(1);
+    const label = entityType.charAt(0).toUpperCase() + entityType.slice(1);
     
     switch (entityType) {
       case 'project':

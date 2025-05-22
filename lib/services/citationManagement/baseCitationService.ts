@@ -319,185 +319,169 @@ export abstract class BaseCitationService {
    * Get cached collections
    * @returns The cached collections or null if not found
    */
-  protected async getCachedCollections(): Promise<CitationCollection[] | null> {
-      return null;
+protected async getCachedCollections(): Promise<CitationCollection[] | null> {
+  try {
+    const cacheKey = this.getCollectionsCacheKey();
+    const cachedCollections = await this.getFromCache(cacheKey); // Assuming there's a method to get from cache
+
+    if (cachedCollections) {
+      return JSON.parse(cachedCollections);
     }
-    
-    try {
-      const cacheKey = this.getCollectionsCacheKey();
-      
-      if (cachedCollections) {
-        return JSON.parse(cachedCollections);
-      }
-      
-      return null;
-    } catch (error) {
-      logger.warn('Error getting cached collections', {
-        error: error instanceof Error ? error.message : String(error),
-        toolName: this.toolName
-      });
-      
-      return null;
-    }
+
+    return null;
+  } catch (error) {
+    logger.warn('Error getting cached collections', {
+      error: error instanceof Error ? error.message : String(error),
+      toolName: this.toolName
+    });
+
+    return null;
   }
+}
   
   /**
    * Cache collections
    * @param collections The collections to cache
    */
-  protected async cacheCollections(collections: CitationCollection[]): Promise<void> {
-      return;
-    }
-    
-    try {
-      const cacheKey = this.getCollectionsCacheKey();
-    } catch (error) {
-      logger.warn('Error caching collections', {
-        error: error instanceof Error ? error.message : String(error),
-        toolName: this.toolName
-      });
-    }
+protected async cacheCollections(collections: CitationCollection[]): Promise<void> {
+  try {
+    const cacheKey = this.getCollectionsCacheKey();
+    await this.setInCache(cacheKey, JSON.stringify(collections), this.cacheTtl); // Assuming there's a method to set in cache
+  } catch (error) {
+    logger.warn('Error caching collections', {
+      error: error instanceof Error ? error.message : String(error),
+      toolName: this.toolName
+    });
   }
+}
   
   /**
    * Get a cached collection
    * @param id The collection ID
    * @returns The cached collection or null if not found
    */
-  protected async getCachedCollection(id: string): Promise<CitationCollection | null> {
-      return null;
+protected async getCachedCollection(id: string): Promise<CitationCollection | null> {
+  try {
+    const cacheKey = this.getCollectionCacheKey(id);
+    const cachedCollection = await this.getFromCache(cacheKey); // Assuming there's a method to get from cache
+
+    if (cachedCollection) {
+      return JSON.parse(cachedCollection);
     }
-    
-    try {
-      const cacheKey = this.getCollectionCacheKey(id);
-      
-      if (cachedCollection) {
-        return JSON.parse(cachedCollection);
-      }
-      
-      return null;
-    } catch (error) {
-      logger.warn('Error getting cached collection', {
-        error: error instanceof Error ? error.message : String(error),
-        toolName: this.toolName,
-        collectionId: id
-      });
-      
-      return null;
-    }
+
+    return null;
+  } catch (error) {
+    logger.warn('Error getting cached collection', {
+      error: error instanceof Error ? error.message : String(error),
+      toolName: this.toolName,
+      collectionId: id
+    });
+
+    return null;
   }
+}
   
   /**
    * Cache a collection
    * @param collection The collection to cache
    */
-  protected async cacheCollection(collection: CitationCollection): Promise<void> {
-      return;
-    }
-    
-    try {
-      const cacheKey = this.getCollectionCacheKey(collection.id);
-    } catch (error) {
-      logger.warn('Error caching collection', {
-        error: error instanceof Error ? error.message : String(error),
-        toolName: this.toolName,
-        collectionId: collection.id
-      });
-    }
+protected async cacheCollection(collection: CitationCollection): Promise<void> {
+  try {
+    const cacheKey = this.getCollectionCacheKey(collection.id);
+    await this.setInCache(cacheKey, JSON.stringify(collection), this.cacheTtl); // Assuming there's a method to set in cache
+  } catch (error) {
+    logger.warn('Error caching collection', {
+      error: error instanceof Error ? error.message : String(error),
+      toolName: this.toolName,
+      collectionId: collection.id
+    });
   }
+}
   
   /**
    * Get a cached citation
    * @param id The citation ID
    * @returns The cached citation or null if not found
    */
-  protected async getCachedCitation(id: string): Promise<CitationItem | null> {
-      return null;
+protected async getCachedCitation(id: string): Promise<CitationItem | null> {
+  try {
+    const cacheKey = this.getCitationCacheKey(id);
+    const cachedCitation = await this.getFromCache(cacheKey); // Assuming there's a method to get from cache
+
+    if (cachedCitation) {
+      return JSON.parse(cachedCitation);
     }
-    
-    try {
-      const cacheKey = this.getCitationCacheKey(id);
-      
-      if (cachedCitation) {
-        return JSON.parse(cachedCitation);
-      }
-      
-      return null;
-    } catch (error) {
-      logger.warn('Error getting cached citation', {
-        error: error instanceof Error ? error.message : String(error),
-        toolName: this.toolName,
-        citationId: id
-      });
-      
-      return null;
-    }
+
+    return null;
+  } catch (error) {
+    logger.warn('Error getting cached citation', {
+      error: error instanceof Error ? error.message : String(error),
+      toolName: this.toolName,
+      citationId: id
+    });
+
+    return null;
   }
+}
   
   /**
    * Cache a citation
    * @param citation The citation to cache
    */
-  protected async cacheCitation(citation: CitationItem): Promise<void> {
-      return;
-    }
-    
-    try {
-      const cacheKey = this.getCitationCacheKey(citation.id);
-    } catch (error) {
-      logger.warn('Error caching citation', {
-        error: error instanceof Error ? error.message : String(error),
-        toolName: this.toolName,
-        citationId: citation.id
-      });
-    }
+protected async cacheCitation(citation: CitationItem): Promise<void> {
+  try {
+    const cacheKey = this.getCitationCacheKey(citation.id);
+    await this.setInCache(cacheKey, JSON.stringify(citation), this.cacheTtl); // Assuming there's a method to set in cache
+  } catch (error) {
+    logger.warn('Error caching citation', {
+      error: error instanceof Error ? error.message : String(error),
+      toolName: this.toolName,
+      citationId: citation.id
+    });
   }
+}
   
   /**
    * Get cached search results
    * @param params The search parameters
    * @returns The cached search results or null if not found
    */
-  protected async getCachedSearchResults(params: CitationSearchParams): Promise<CitationSearchResults | null> {
-      return null;
+protected async getCachedSearchResults(params: CitationSearchParams): Promise<CitationSearchResults | null> {
+  try {
+    const cacheKey = this.getSearchCacheKey(params);
+    const cachedResults = await this.getFromCache(cacheKey); // Assuming there's a method to get from cache
+
+    if (cachedResults) {
+      return JSON.parse(cachedResults);
     }
-    
-    try {
-      const cacheKey = this.getSearchCacheKey(params);
-      
-      if (cachedResults) {
-        return JSON.parse(cachedResults);
-      }
-      
-      return null;
-    } catch (error) {
-      logger.warn('Error getting cached search results', {
-        error: error instanceof Error ? error.message : String(error),
-        toolName: this.toolName,
-        params
-      });
-      
-      return null;
-    }
+
+    return null;
+  } catch (error) {
+    logger.warn('Error getting cached search results', {
+      error: error instanceof Error ? error.message : String(error),
+      toolName: this.toolName,
+      params
+    });
+
+    return null;
   }
+}
   
   /**
    * Cache search results
    * @param params The search parameters
    * @param results The search results
    */
-  protected async cacheSearchResults(params: CitationSearchParams, results: CitationSearchResults): Promise<void> {
-      return;
-    }
-    
-    try {
-      const cacheKey = this.getSearchCacheKey(params);
-    } catch (error) {
-      logger.warn('Error caching search results', {
-        error: error instanceof Error ? error.message : String(error),
-        toolName: this.toolName,
-        params
-      });
-    }
+protected async cacheSearchResults(params: CitationSearchParams, results: CitationSearchResults): Promise<void> {
+  try {
+    const cacheKey = this.getSearchCacheKey(params);
+    await this.setInCache(cacheKey, JSON.stringify(results), this.cacheTtl); // Assuming there's a method to set in cache
+  } catch (error) {
+    logger.warn('Error caching search results', {
+      error: error instanceof Error ? error.message : String(error),
+      toolName: this.toolName,
+      params
+    });
   }
+}
 }

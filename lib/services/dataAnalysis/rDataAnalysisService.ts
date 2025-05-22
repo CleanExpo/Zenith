@@ -1,5 +1,5 @@
 import {
-  BaseDataAnalysisService,
+  DataAnalysisService,
   DataAnalysisToolCredentials,
   Dataset,
   DataColumn,
@@ -11,13 +11,14 @@ import {
   VisualizationResult
 } from "./baseDataAnalysisService";
 import { logger } from "@/lib/logger";
+import { setWithWriteThrough, CacheExpiration } from "@/utils/advancedCacheUtils";
 import { v4 as uuidv4 } from "uuid";
 import { redisClient } from "@/utils/redis";
 
 /**
  * R data analysis service
  */
-export class RDataAnalysisService extends BaseDataAnalysisService {
+export class RDataAnalysisService extends DataAnalysisService {
   protected toolName: string = "R";
   protected baseUrl: string;
   protected apiKey: string;
@@ -38,7 +39,10 @@ export class RDataAnalysisService extends BaseDataAnalysisService {
   async getCachedDatasets(): Promise<Dataset[] | null> { return null; }
   async cacheDatasets(_datasets: Dataset[]): Promise<void> { return; }
   async getCachedDataset(_id: string): Promise<Dataset | null> { return null; }
-  async cacheDataset(_dataset: Dataset): Promise<void> { return; }
+  async cacheDataset(dataset: Dataset, key?: string): Promise<void> {
+  const cacheKey = key || this.getDatasetCacheKey(dataset.id);
+  await setWithWriteThrough(cacheKey, dataset, { expiration: CacheExpiration.MEDIUM });
+}
   async getCachedAnalysisResult(_id: string): Promise<AnalysisResult | null> { return null; }
   async cacheAnalysisResult(_result: AnalysisResult): Promise<void> { return; }
   async getCachedTransformationResult(_id: string): Promise<TransformationResult | null> { return null; }
@@ -122,7 +126,7 @@ export class RDataAnalysisService extends BaseDataAnalysisService {
         format: "csv",
         size: 1024
       };
-      await this.cacheDataset(dataset);
+      await this.cacheDataset(dataset, this.getDatasetCacheKey(dataset.id));
       logger.info("Retrieved dataset from API", { userId: this.userId, datasetId: id });
       return dataset;
     } catch (error) {
@@ -152,7 +156,7 @@ export class RDataAnalysisService extends BaseDataAnalysisService {
         format: "json",
         size: JSON.stringify(data).length
       };
-      await this.cacheDataset(dataset);
+      await this.cacheDataset(dataset, this.getDatasetCacheKey(dataset.id));
       await this.cacheDatasets([]);
       logger.info("Created dataset", { userId: this.userId, datasetId: dataset.id, name, rowCount: data.length });
       return dataset;
@@ -175,7 +179,7 @@ export class RDataAnalysisService extends BaseDataAnalysisService {
         description: description || dataset.description,
         updatedAt: new Date().toISOString()
       };
-      await this.cacheDataset(updatedDataset);
+      await this.cacheDataset(updatedDataset, this.getDatasetCacheKey(updatedDataset.id));
       await this.cacheDatasets([]);
       logger.info("Updated dataset", { userId: this.userId, datasetId: id, name, description });
       return updatedDataset;
@@ -222,7 +226,7 @@ export class RDataAnalysisService extends BaseDataAnalysisService {
         format: file.name.split(".").pop() || "unknown",
         size: file.size
       };
-      await this.cacheDataset(dataset);
+      await this.cacheDataset(dataset, this.getDatasetCacheKey(dataset.id));
       await this.cacheDatasets([]);
       logger.info("Uploaded dataset", { userId: this.userId, datasetId: dataset.id, name, fileName: file.name, fileSize: file.size });
       return dataset;

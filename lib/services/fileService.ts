@@ -33,17 +33,21 @@ export class FileService {
     try {
       // Create a unique file path: userId/projectId/timestamp-filename
       const timestamp = new Date().getTime();
-      const fileExtension = file.name.split('.').pop();
+      // const fileExtension = file.name.split('.').pop(); // Unused variable
       const fileName = `${timestamp}-${file.name}`;
       const filePath = `${userId}/${projectId}/${fileName}`;
 
       // Upload the file to Supabase Storage
-      const { data: storageData, error: storageError } = await this.supabase.storage
+      const { error: storageError } = await this.supabase.storage
         .from(this.bucketName)
         .upload(filePath, file);
 
       if (storageError) {
-        logger.error('Error uploading file to storage', { error: storageError.message, projectId, userId });
+        if (storageError instanceof Error) {
+          logger.error('Error uploading file to storage', { error: storageError.message, projectId, userId });
+        } else {
+          logger.error('Error uploading file to storage', { error: storageError, projectId, userId });
+        }
         throw new Error(`Failed to upload file: ${storageError.message}`);
       }
 
@@ -82,8 +86,12 @@ export class FileService {
 
       logger.info('File uploaded successfully', { projectId, userId, fileId: fileData.id });
       return fileData;
-    } catch (error: any) {
-      logger.error('Error in uploadFile', { error: error.message, projectId, userId });
+} catch (error: unknown) {
+      if (error instanceof Error) {
+        logger.error('Error in uploadFile', { error: error.message, projectId, userId });
+      } else {
+        logger.error('Error in uploadFile', { error, projectId, userId });
+      }
       throw error;
     }
   }
@@ -105,8 +113,12 @@ export class FileService {
       }
 
       return data || [];
-    } catch (error: any) {
-      logger.error('Error in getProjectFiles', { error: error.message, projectId });
+} catch (error: unknown) {
+      if (error instanceof Error) {
+        logger.error('Error in getProjectFiles', { error: error.message, projectId });
+      } else {
+        logger.error('Error in getProjectFiles', { error, projectId });
+      }
       throw error;
     }
   }
@@ -150,8 +162,12 @@ export class FileService {
       }
 
       logger.info('File deleted successfully', { fileId });
-    } catch (error: any) {
-      logger.error('Error in deleteFile', { error: error.message, fileId });
+} catch (error: unknown) {
+      if (error instanceof Error) {
+        logger.error('Error in deleteFile', { error: error.message, fileId });
+      } else {
+        logger.error('Error in deleteFile', { error, fileId });
+      }
       throw error;
     }
   }
@@ -175,8 +191,12 @@ export class FileService {
 
       logger.info('File description updated successfully', { fileId });
       return data;
-    } catch (error: any) {
-      logger.error('Error in updateFileDescription', { error: error.message, fileId });
+} catch (error: unknown) {
+      if (error instanceof Error) {
+        logger.error('Error in updateFileDescription', { error: error.message, fileId });
+      } else {
+        logger.error('Error in updateFileDescription', { error, fileId });
+      }
       throw error;
     }
   }
@@ -196,8 +216,12 @@ export class FileService {
       }
 
       return data.signedUrl;
-    } catch (error: any) {
-      logger.error('Error in getFileDownloadUrl', { error: error.message, storagePath });
+} catch (error: unknown) {
+      if (error instanceof Error) {
+        logger.error('Error in getFileDownloadUrl', { error: error.message, storagePath });
+      } else {
+        logger.error('Error in getFileDownloadUrl', { error, storagePath });
+      }
       throw error;
     }
   }

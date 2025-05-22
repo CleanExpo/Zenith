@@ -35,7 +35,7 @@ export interface AcademicSearchParams {
   endDate?: string;
   
   // Additional filters specific to the database
-  filters?: Record<string, any>;
+filters?: Record<string, unknown>;
 }
 
 /**
@@ -79,7 +79,7 @@ export interface AcademicPublication {
   databaseSource: string;
   
   // Additional metadata specific to the database
-  metadata?: Record<string, any>;
+metadata?: Record<string, unknown>;
 }
 
 /**
@@ -105,7 +105,7 @@ export interface AcademicSearchResults {
   databaseSource: string;
   
   // Additional metadata specific to the database
-  metadata?: Record<string, any>;
+metadata?: Record<string, unknown>;
 }
 
 /**
@@ -255,7 +255,7 @@ export abstract class BaseAcademicDatabaseService {
    * @param params The query parameters
    * @returns The API response
    */
-  protected async makeApiRequest<T>(endpoint: string, params: Record<string, any> = {}): Promise<T> {
+protected async makeApiRequest<T>(endpoint: string, params: Record<string, unknown> = {}): Promise<T> {
     const url = new URL(`${this.baseUrl}${endpoint}`);
     
     // Add query parameters

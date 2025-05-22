@@ -1,10 +1,10 @@
 export class SimpleCache {
   private cache: Map<string, { value: any, expires: number, lastAccessed: number }> = new Map();
 
-  public set(key: string, value: any, ttl: number): void {
-    const expires = Date.now() + ttl * 1000;
-    this.cache.set(key, { value, expires, lastAccessed: Date.now() });
-  }
+public set(key: string, value: any, ttl: number, options?: { [key: string]: any }): void {
+  const expires = Date.now() + ttl * 1000;
+  this.cache.set(key, { value, expires, lastAccessed: Date.now() });
+}
 
   public get(key: string): any | null {
     const item = this.cache.get(key);
@@ -16,9 +16,9 @@ export class SimpleCache {
     return null;
   }
 
-  public delete(key: string): void {
-    this.cache.delete(key);
-  }
+public del(key: string): void {
+  this.cache.delete(key);
+}
 
   public clear(): void {
     this.cache.clear();

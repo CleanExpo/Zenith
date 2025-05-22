@@ -12,198 +12,321 @@ describe('SupervisedLearningService', () => {
   let service: SupervisedLearningService;
 
   beforeEach(() => {
-    service = new SupervisedLearningService('test-user-id');
-    (globalThis as any).cache = {};
+    service = new SupervisedLearningService('testUserId');
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  describe('createDataset', () => {
+    it('should create a new dataset', async () => {
+      const dataset = await service.createDataset(
+        'Test Dataset',
+        'This is a test dataset',
+        [{ name: 'feature1', type: 'numeric' }],
+        'feature1',
+        100
+      );
 
-  describe('cacheDataset', () => {
-    it('should cache a dataset', async () => {
-      const dataset = {
-        id: uuidv4(),
-        name: 'Test Dataset',
-        description: 'A test dataset',
-        features: [],
-        targetFeature: 'target',
-        rowCount: 100,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        ownerId: 'test-user-id',
-        tags: ['test'],
-        dataSource: 'test-source'
-      };
-
-      await service.cacheDataset(dataset);
-
-      expect((globalThis as any).cache).toHaveProperty(`supervised-learning:dataset:${dataset.id}`, JSON.stringify(dataset));
-      expect(logger.info).toHaveBeenCalledWith('Cached dataset', {
-        userId: 'test-user-id',
-        datasetId: dataset.id,
-        cacheKey: `supervised-learning:dataset:${dataset.id}`
-      });
+      expect(dataset.id).toBeDefined();
+      expect(dataset.name).toBe('Test Dataset');
+      expect(dataset.description).toBe('This is a test dataset');
+      expect(dataset.features).toEqual([{ name: 'feature1', type: 'numeric' }]);
+      expect(dataset.targetFeature).toBe('feature1');
+      expect(dataset.rowCount).toBe(100);
+      expect(dataset.createdAt).toBeDefined();
+      expect(dataset.updatedAt).toBeDefined();
+      expect(dataset.ownerId).toBe('testUserId');
+      expect(dataset.tags).toBeUndefined();
+      expect(dataset.dataSource).toBeUndefined();
     });
   });
 
-  describe('getCachedDataset', () => {
-    it('should retrieve a cached dataset', async () => {
-      const dataset = {
-        id: uuidv4(),
-        name: 'Test Dataset',
-        description: 'A test dataset',
-        features: [],
-        targetFeature: 'target',
-        rowCount: 100,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        ownerId: 'test-user-id',
-        tags: ['test'],
-        dataSource: 'test-source'
-      };
-
-      (globalThis as any).cache[`supervised-learning:dataset:${dataset.id}`] = JSON.stringify(dataset);
-
-      const cachedDataset = await service.getCachedDataset(dataset.id);
-
-      expect(cachedDataset).toEqual(dataset);
-      expect(logger.info).toHaveBeenCalledWith('Retrieved dataset from cache', {
-        userId: 'test-user-id',
-        datasetId: dataset.id
-      });
-    });
-
-    it('should return null if dataset is not cached', async () => {
-      const datasetId = uuidv4();
-
-      const cachedDataset = await service.getCachedDataset(datasetId);
-
-      expect(cachedDataset).toBeNull();
+  describe('getDataset', () => {
+    it('should throw an error if dataset is not found', async () => {
+      await expect(service.getDataset('nonExistentId')).rejects.toThrow('Dataset not found: nonExistentId');
     });
   });
 
-  describe('cacheModel', () => {
-    it('should cache a model', async () => {
-      const model = {
-        id: uuidv4(),
-        name: 'Test Model',
-        description: 'A test model',
-        type: 'classification',
-        algorithm: 'logistic_regression',
-        datasetId: uuidv4(),
-        parameters: {},
-        metrics: {},
-        featureImportance: {},
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        ownerId: 'test-user-id',
-        status: 'training',
-        version: 1
-      };
+  describe('updateDataset', () => {
+    it('should update an existing dataset', async () => {
+      const dataset = await service.createDataset(
+        'Test Dataset',
+        'This is a test dataset',
+        [{ name: 'feature1', type: 'numeric' }],
+        'feature1',
+        100
+      );
 
-      await service.cacheModel(model);
+      const updatedDataset = await service.updateDataset(
+        dataset.id,
+        'Updated Test Dataset',
+        'This is an updated test dataset',
+        [{ name: 'feature1', type: 'numeric', importance: 1 }],
+        'feature1',
+        ['tag1', 'tag2']
+      );
 
-      expect((globalThis as any).cache).toHaveProperty(`supervised-learning:model:${model.id}`, JSON.stringify(model));
-      expect(logger.info).toHaveBeenCalledWith('Cached model', {
-        userId: 'test-user-id',
-        modelId: model.id,
-        cacheKey: `supervised-learning:model:${model.id}`
-      });
+      expect(updatedDataset.name).toBe('Updated Test Dataset');
+      expect(updatedDataset.description).toBe('This is an updated test dataset');
+      expect(updatedDataset.features).toEqual([{ name: 'feature1', type: 'numeric', importance: 1 }]);
+      expect(updatedDataset.targetFeature).toBe('feature1');
+      expect(updatedDataset.tags).toEqual(['tag1', 'tag2']);
     });
   });
 
-  describe('getCachedModel', () => {
-    it('should retrieve a cached model', async () => {
-      const model = {
-        id: uuidv4(),
-        name: 'Test Model',
-        description: 'A test model',
-        type: 'classification',
-        algorithm: 'logistic_regression',
-        datasetId: uuidv4(),
-        parameters: {},
-        metrics: {},
-        featureImportance: {},
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        ownerId: 'test-user-id',
-        status: 'training',
-        version: 1
-      };
+  describe('deleteDataset', () => {
+    it('should delete a dataset', async () => {
+      const dataset = await service.createDataset(
+        'Test Dataset',
+        'This is a test dataset',
+        [{ name: 'feature1', type: 'numeric' }],
+        'feature1',
+        100
+      );
 
-      (globalThis as any).cache[`supervised-learning:model:${model.id}`] = JSON.stringify(model);
-
-      const cachedModel = await service.getCachedModel(model.id);
-
-      expect(cachedModel).toEqual(model);
-      expect(logger.info).toHaveBeenCalledWith('Retrieved model from cache', {
-        userId: 'test-user-id',
-        modelId: model.id
-      });
-    });
-
-    it('should return null if model is not cached', async () => {
-      const modelId = uuidv4();
-
-      const cachedModel = await service.getCachedModel(modelId);
-
-      expect(cachedModel).toBeNull();
+      const result = await service.deleteDataset(dataset.id);
+      expect(result).toBe(true);
     });
   });
 
-  describe('cachePrediction', () => {
-    it('should cache a prediction', async () => {
-      const prediction = {
-        id: uuidv4(),
-        modelId: uuidv4(),
-        input: {},
-        output: {},
-        confidence: 0.85,
-        explanation: {},
-        createdAt: new Date().toISOString()
-      };
+  describe('trainModel', () => {
+    it('should create and train a new model', async () => {
+      const dataset = await service.createDataset(
+        'Test Dataset',
+        'This is a test dataset',
+        [{ name: 'feature1', type: 'numeric' }],
+        'feature1',
+        100
+      );
 
-      await service.cachePrediction(prediction);
+      const model = await service.trainModel(
+        'Test Model',
+        'This is a test model',
+        'classification',
+        'logistic_regression',
+        dataset.id,
+        { param1: 'value1' }
+      );
 
-      expect((globalThis as any).cache).toHaveProperty(`supervised-learning:prediction:${prediction.id}`, JSON.stringify(prediction));
-      expect(logger.info).toHaveBeenCalledWith('Cached prediction', {
-        userId: 'test-user-id',
-        predictionId: prediction.id,
-        cacheKey: `supervised-learning:prediction:${prediction.id}`
-      });
+      expect(model.id).toBeDefined();
+      expect(model.name).toBe('Test Model');
+      expect(model.description).toBe('This is a test model');
+      expect(model.type).toBe('classification');
+      expect(model.algorithm).toBe('logistic_regression');
+      expect(model.datasetId).toBe(dataset.id);
+      expect(model.parameters).toEqual({ param1: 'value1' });
+      expect(model.metrics).toEqual({});
+      expect(model.featureImportance).toBeUndefined();
+      expect(model.createdAt).toBeDefined();
+      expect(model.updatedAt).toBeDefined();
+      expect(model.ownerId).toBe('testUserId');
+      expect(model.status).toBe('training');
+      expect(model.errorMessage).toBeUndefined();
+      expect(model.version).toBe(1);
+
+      // Wait for the model to be trained
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      const trainedModel = await service.getModel(model.id);
+      expect(trainedModel.status).toBe('trained');
+      expect(trainedModel.metrics).toBeDefined();
+      expect(trainedModel.featureImportance).toBeDefined();
     });
   });
 
-  describe('getCachedPrediction', () => {
-    it('should retrieve a cached prediction', async () => {
-      const prediction = {
-        id: uuidv4(),
-        modelId: uuidv4(),
-        input: {},
-        output: {},
-        confidence: 0.85,
-        explanation: {},
-        createdAt: new Date().toISOString()
-      };
+  describe('getModel', () => {
+    it('should throw an error if model is not found', async () => {
+      await expect(service.getModel('nonExistentId')).rejects.toThrow('Model not found: nonExistentId');
+    });
+  });
 
-      (globalThis as any).cache[`supervised-learning:prediction:${prediction.id}`] = JSON.stringify(prediction);
+  describe('updateModel', () => {
+    it('should update an existing model', async () => {
+      const dataset = await service.createDataset(
+        'Test Dataset',
+        'This is a test dataset',
+        [{ name: 'feature1', type: 'numeric' }],
+        'feature1',
+        100
+      );
 
-      const cachedPrediction = await service.getCachedPrediction(prediction.id);
+      const model = await service.trainModel(
+        'Test Model',
+        'This is a test model',
+        'classification',
+        'logistic_regression',
+        dataset.id,
+        { param1: 'value1' }
+      );
 
-      expect(cachedPrediction).toEqual(prediction);
-      expect(logger.info).toHaveBeenCalledWith('Retrieved prediction from cache', {
-        userId: 'test-user-id',
-        predictionId: prediction.id
-      });
+      // Wait for the model to be trained
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      const updatedModel = await service.updateModel(
+        model.id,
+        'Updated Test Model',
+        'This is an updated test model'
+      );
+
+      expect(updatedModel.name).toBe('Updated Test Model');
+      expect(updatedModel.description).toBe('This is an updated test model');
+    });
+  });
+
+  describe('deleteModel', () => {
+    it('should delete a model', async () => {
+      const dataset = await service.createDataset(
+        'Test Dataset',
+        'This is a test dataset',
+        [{ name: 'feature1', type: 'numeric' }],
+        'feature1',
+        100
+      );
+
+      const model = await service.trainModel(
+        'Test Model',
+        'This is a test model',
+        'classification',
+        'logistic_regression',
+        dataset.id,
+        { param1: 'value1' }
+      );
+
+      // Wait for the model to be trained
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      const result = await service.deleteModel(model.id);
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('predict', () => {
+    it('should make a prediction with a trained model', async () => {
+      const dataset = await service.createDataset(
+        'Test Dataset',
+        'This is a test dataset',
+        [{ name: 'feature1', type: 'numeric' }],
+        'feature1',
+        100
+      );
+
+      const model = await service.trainModel(
+        'Test Model',
+        'This is a test model',
+        'classification',
+        'logistic_regression',
+        dataset.id,
+        { param1: 'value1' }
+      );
+
+      // Wait for the model to be trained
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      const prediction = await service.predict(
+        model.id,
+        { feature1: 10 }
+      );
+
+      expect(prediction.id).toBeDefined();
+      expect(prediction.modelId).toBe(model.id);
+      expect(prediction.input).toEqual({ feature1: 10 });
+      expect(prediction.output).toBeDefined();
+      expect(prediction.confidence).toBeDefined();
+      expect(prediction.explanation).toBeDefined();
+      expect(prediction.createdAt).toBeDefined();
     });
 
-    it('should return null if prediction is not cached', async () => {
-      const predictionId = uuidv4();
+    it('should throw an error if the model is not trained', async () => {
+      const dataset = await service.createDataset(
+        'Test Dataset',
+        'This is a test dataset',
+        [{ name: 'feature1', type: 'numeric' }],
+        'feature1',
+        100
+      );
 
-      const cachedPrediction = await service.getCachedPrediction(predictionId);
+      const model = await service.trainModel(
+        'Test Model',
+        'This is a test model',
+        'classification',
+        'logistic_regression',
+        dataset.id,
+        { param1: 'value1' }
+      );
 
-      expect(cachedPrediction).toBeNull();
+      await expect(service.predict(
+        model.id,
+        { feature1: 10 }
+      )).rejects.toThrow('Model is not trained: ' + model.id);
+    });
+  });
+
+  describe('evaluateModel', () => {
+    it('should evaluate a trained model', async () => {
+      const dataset = await service.createDataset(
+        'Test Dataset',
+        'This is a test dataset',
+        [{ name: 'feature1', type: 'numeric' }],
+        'feature1',
+        100
+      );
+
+      const model = await service.trainModel(
+        'Test Model',
+        'This is a test model',
+        'classification',
+        'logistic_regression',
+        dataset.id,
+        { param1: 'value1' }
+      );
+
+      // Wait for the model to be trained
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      const testDataset = await service.createDataset(
+        'Test Dataset 2',
+        'This is a test dataset 2',
+        [{ name: 'feature1', type: 'numeric' }],
+        'feature1',
+        100
+      );
+
+      const metrics = await service.evaluateModel(
+        model.id,
+        testDataset.id
+      );
+
+      expect(metrics).toBeDefined();
+    });
+
+    it('should throw an error if the model is not trained', async () => {
+      const dataset = await service.createDataset(
+        'Test Dataset',
+        'This is a test dataset',
+        [{ name: 'feature1', type: 'numeric' }],
+        'feature1',
+        100
+      );
+
+      const model = await service.trainModel(
+        'Test Model',
+        'This is a test model',
+        'classification',
+        'logistic_regression',
+        dataset.id,
+        { param1: 'value1' }
+      );
+
+      const testDataset = await service.createDataset(
+        'Test Dataset 2',
+        'This is a test dataset 2',
+        [{ name: 'feature1', type: 'numeric' }],
+        'feature1',
+        100
+      );
+
+      await expect(service.evaluateModel(
+        model.id,
+        testDataset.id
+      )).rejects.toThrow('Model is not trained: ' + model.id);
     });
   });
 });
