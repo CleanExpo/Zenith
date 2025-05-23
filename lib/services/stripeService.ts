@@ -103,7 +103,12 @@ class StripeService {
     if (!this.stripe && typeof process !== 'undefined') {
       const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
       if (!stripeSecretKey) {
-        logger.error('STRIPE_SECRET_KEY is not set in environment variables.');
+        // Only log error in production, warn in development/build
+        if (process.env.NODE_ENV === 'production') {
+          logger.error('STRIPE_SECRET_KEY is not set in environment variables.');
+        } else {
+          logger.warn('STRIPE_SECRET_KEY is not set in environment variables. Stripe functionality will be disabled.');
+        }
         return;
       }
       this.stripe = new Stripe(stripeSecretKey, {
