@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   description: 'Analyze your research data with powerful data analysis tools.',
 };
 
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
+
 /**
  * Data Analysis Page
  */

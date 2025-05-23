@@ -16,6 +16,9 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { UserPreferencesComponent } from '@/components/profile/UserPreferences';
 import { profileService, UserProfile } from '@/lib/services/profileService';
 
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
+
 export default function ProfilePage() {
   const router = useRouter();
   const supabase = createClient();
