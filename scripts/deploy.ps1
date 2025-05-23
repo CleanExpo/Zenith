@@ -179,6 +179,7 @@ try {
     Write-Host "🔧 For troubleshooting, check the deployment platform logs" -ForegroundColor Yellow
 }
 catch {
-    Write-ErrorMessage "Deployment failed: $($_.Exception.Message)"
+    $errorMsg = $_.Exception.Message
+    Write-ErrorMessage "Deployment failed: $errorMsg"
     exit 1
 }
