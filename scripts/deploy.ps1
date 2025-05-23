@@ -26,14 +26,14 @@ function Write-Warning {
     Write-Host "[WARNING] $Message" -ForegroundColor Yellow
 }
 
-function Write-Error {
+function Write-ErrorMessage {
     param([string]$Message)
     Write-Host "[ERROR] $Message" -ForegroundColor Red
 }
 
 # Check if we're in the right directory
 if (-not (Test-Path "package.json")) {
-    Write-Error "package.json not found. Please run this script from the project root."
+    Write-ErrorMessage "package.json not found. Please run this script from the project root."
     exit 1
 }
 
@@ -158,7 +158,7 @@ try {
             Write-Host "Please follow the instructions in DEPLOYMENT_GUIDE.md"
         }
         default {
-            Write-Error "Invalid choice. Please run the script again."
+            Write-ErrorMessage "Invalid choice. Please run the script again."
             exit 1
         }
     }
@@ -179,6 +179,6 @@ try {
     Write-Host "🔧 For troubleshooting, check the deployment platform logs" -ForegroundColor Yellow
 }
 catch {
-    Write-Error "Deployment failed: $($_.Exception.Message)"
+    Write-ErrorMessage "Deployment failed: $($_.Exception.Message)"
     exit 1
 }
