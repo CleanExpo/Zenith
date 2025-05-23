@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { redisClient } from '@/lib/utils/redis';
 import { logger } from '@/lib/logger';
 
@@ -29,19 +29,18 @@ import { logger } from '@/lib/logger';
  * }
  */
 export async function GET(request: NextRequest) {
-  const supabaseClient = createClient();
   const startTime = Date.now();
   const appVersion = process.env.APP_VERSION || '1.0.0';
   
   // Initialize response object
   const healthResponse = {
-    status: 'healthy',
+    status: 'healthy' as 'healthy' | 'degraded' | 'unhealthy',
     timestamp: new Date().toISOString(),
     version: appVersion,
     services: {
-      api: { status: 'healthy', responseTime: 0 },
-      database: { status: 'healthy', responseTime: 0 },
-      redis: { status: 'healthy', responseTime: 0 }
+      api: { status: 'healthy' as 'healthy' | 'unhealthy', responseTime: 0 },
+      database: { status: 'healthy' as 'healthy' | 'unhealthy', responseTime: 0 },
+      redis: { status: 'healthy' as 'healthy' | 'unhealthy', responseTime: 0 }
     },
     details: {
       api: { message: 'API server is responding normally' },
@@ -53,7 +52,7 @@ export async function GET(request: NextRequest) {
   // Check database connection
   const dbStartTime = Date.now();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data, error } = await supabase.from('research_projects').select('id').limit(1);
     
     if (error) {
@@ -81,11 +80,12 @@ export async function GET(request: NextRequest) {
       throw new Error('Redis client not initialized');
     }
     
-    // For mock client, we'll just check if it exists
-    if (redisClient) {
-      // Mock client is available
-    } else {
-      throw new Error('Redis mock client not available');
+    // Test Redis connection with a simple operation
+    await redisClient.set('health_check', 'ok', 'EX', 10);
+    const testValue = await redisClient.get('health_check');
+    
+    if (testValue !== 'ok') {
+      throw new Error('Redis test operation failed');
     }
     
     healthResponse.services.redis.responseTime = Date.now() - redisStartTime;
@@ -94,7 +94,13 @@ export async function GET(request: NextRequest) {
     healthResponse.services.redis.status = 'unhealthy';
     healthResponse.services.redis.responseTime = Date.now() - redisStartTime;
     healthResponse.details.redis.message = `Redis connection failed: ${error.message}`;
-    healthResponse.status = 'degraded';
+    
+    // Redis failure is not critical in development (we have fallbacks)
+    if (process.env.NODE_ENV === 'development') {
+      healthResponse.details.redis.message += ' (using fallback in development)';
+    } else {
+      healthResponse.status = 'degraded';
+    }
     
     logger.error('Health check - Redis connection failed', { 
       error: error.message,
@@ -106,9 +112,10 @@ export async function GET(request: NextRequest) {
   healthResponse.services.api.responseTime = Date.now() - startTime;
   
   // Determine overall status
-  if (healthResponse.services.database.status === 'unhealthy' && 
-      healthResponse.services.redis.status === 'unhealthy') {
+  if (healthResponse.services.database.status === 'unhealthy') {
     healthResponse.status = 'unhealthy';
+  } else if (healthResponse.services.redis.status === 'unhealthy' && process.env.NODE_ENV !== 'development') {
+    healthResponse.status = 'degraded';
   }
   
   // Log health check result
@@ -136,4 +143,3 @@ export async function GET(request: NextRequest) {
 export async function HEAD(request: NextRequest) {
   return new NextResponse(null, { status: 200 });
 }
-

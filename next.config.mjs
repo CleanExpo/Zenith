@@ -11,7 +11,7 @@ const nextConfig = {
     optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],
   },
   compiler: {
-    removeConsole: true,
+    removeConsole: process.env.NODE_ENV === 'production',
   },
   // Ensure CSS is properly extracted and loaded
   webpack: (config) => {
@@ -32,15 +32,6 @@ const nextConfig = {
 
     return config;
   },
-fonts: {
-  sans: {
-    name: 'Inter',
-    local: 'Inter',
-    weight: '400',
-    style: 'normal',
-    display: 'swap',
-  },
-},
 };
 
 export default nextConfig;
