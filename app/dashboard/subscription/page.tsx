@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { SubscriptionPlans } from '@/components/subscription/SubscriptionPlans';
 import { BillingHistory } from '@/components/subscription/BillingHistory';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,7 +18,7 @@ export default async function SubscriptionPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // Get the current user
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -90,4 +90,3 @@ export default async function SubscriptionPage({
     </div>
   );
 }
-
