@@ -9,7 +9,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest"
+    "lint:fix": "next lint --fix",
+    "test": "jest",
+    "type-check": "tsc --noEmit",
+    "deploy": "bash scripts/deploy.sh",
+    "deploy:windows": "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1",
+    "deploy:vercel": "bash scripts/deploy.sh 1",
+    "deploy:netlify": "bash scripts/deploy.sh 2",
+    "deploy:railway": "bash scripts/deploy.sh 3",
+    "pre-deploy": "npm run lint && npm run type-check && npm run test && npm run build"
   },
   "keywords": [
     "saas",
