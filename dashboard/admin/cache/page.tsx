@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import LoadingButton from 'ui-components/LoadingButton';
 import { toast } from 'react-toastify';
-import { Alert, AlertDescription, AlertTitle } from '@radix-ui/react-alert-dialog';
-import { BarChart, Clock, Database, RefreshCw, Tag, Trash2, Zap } from 'ui-components';
-import { BarChart, Clock, Database, RefreshCw, Tag, Trash2, Zap } from 'ui-components';
+import * as AlertDialog from '@radix-ui/react-alert-dialog';
+import { AlertTriangle } from '@radix-ui/react-icons';
 import { BarChart, Clock, Database, RefreshCw, Tag, Trash2, Zap } from 'ui-components';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Label, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Input, Switch, Progress, LoadingSkeleton, Tabs, TabsList, TabsTrigger, TabsContent } from 'ui-components';
 import { CacheExpiration } from '@/lib/utils/advancedCacheUtils';
@@ -239,33 +238,84 @@ toast.error('Failed to warm up cache', {
                   <CardContent className="pt-6">
                     <div className="space-y-4">
                       {stats && stats.hitRate < 0.5 && (
-                        <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
-                          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                          <AlertTitle>Low Hit Rate</AlertTitle>
-                          <AlertDescription>
-                            Your cache hit rate is below 50%. Consider warming up the cache or reviewing your caching strategy.
-                          </AlertDescription>
-                        </Alert>
+<AlertDialog.Root>
+  <AlertDialog.Trigger>
+    <Button variant="destructive">Delete</Button>
+  </AlertDialog.Trigger>
+  <AlertDialog.Portal>
+    <AlertDialog.Overlay className="bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+    <AlertDialog.Content className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:scale-100">
+<AlertDialogHeader className="flex flex-col space-y-1.5 text-center sm:text-left">
+  <AlertDialogTitle className="text-lg font-semibold">Low Hit Rate</AlertDialogTitle>
+  <AlertDialogDescription className="text-sm text-muted-foreground">
+    Your cache hit rate is below 50%. Consider warming up the cache or reviewing your caching strategy.
+  </AlertDialogDescription>
+</AlertDialogHeader>
+      <div className="flex justify-end space-x-2">
+        <AlertDialog.Cancel>
+          <Button variant="outline">Cancel</Button>
+        </AlertDialog.Cancel>
+        <AlertDialog.Action>
+          <Button variant="destructive">Continue</Button>
+        </AlertDialog.Action>
+      </div>
+    </AlertDialog.Content>
+  </AlertDialog.Portal>
+</AlertDialog.Root>
                       )}
                       
                       {stats && stats.totalEntries === 0 && (
-                        <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
-                          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                          <AlertTitle>Empty Cache</AlertTitle>
-                          <AlertDescription>
-                            Your cache is empty. Consider warming up the cache to improve application performance.
-                          </AlertDescription>
-                        </Alert>
+<AlertDialog.Root>
+  <AlertDialog.Trigger>
+    <Button variant="destructive">Delete</Button>
+  </AlertDialog.Trigger>
+  <AlertDialog.Portal>
+    <AlertDialog.Overlay className="bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+    <AlertDialog.Content className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:scale-100">
+<AlertDialogHeader className="flex flex-col space-y-1.5 text-center sm:text-left">
+  <AlertDialogTitle className="text-lg font-semibold">Empty Cache</AlertDialogTitle>
+  <AlertDialogDescription className="text-sm text-muted-foreground">
+    Your cache is empty. Consider warming up the cache to improve application performance.
+  </AlertDialogDescription>
+</AlertDialogHeader>
+      <div className="flex justify-end space-x-2">
+        <AlertDialog.Cancel>
+          <Button variant="outline">Cancel</Button>
+        </AlertDialog.Cancel>
+        <AlertDialog.Action>
+          <Button variant="destructive">Continue</Button>
+        </AlertDialog.Action>
+      </div>
+    </AlertDialog.Content>
+  </AlertDialog.Portal>
+</AlertDialog.Root>
                       )}
                       
                       {stats && stats.hitRate >= 0.8 && (
-                        <Alert variant="default" className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
-                          <Zap className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          <AlertTitle>Excellent Hit Rate</AlertTitle>
-                          <AlertDescription>
-                            Your cache hit rate is above 80%. Your caching strategy is working effectively.
-                          </AlertDescription>
-                        </Alert>
+<AlertDialog.Root>
+  <AlertDialog.Trigger>
+    <Button variant="destructive">Delete</Button>
+  </AlertDialog.Trigger>
+  <AlertDialog.Portal>
+    <AlertDialog.Overlay className="bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+    <AlertDialog.Content className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:scale-100">
+<AlertDialogHeader className="flex flex-col space-y-1.5 text-center sm:text-left">
+  <AlertDialogTitle className="text-lg font-semibold">Excellent Hit Rate</AlertDialogTitle>
+  <AlertDialogDescription className="text-sm text-muted-foreground">
+    Your cache hit rate is above 80%. Your caching strategy is working effectively.
+  </AlertDialogDescription>
+</AlertDialogHeader>
+      <div className="flex justify-end space-x-2">
+        <AlertDialog.Cancel>
+          <Button variant="outline">Cancel</Button>
+        </AlertDialog.Cancel>
+        <AlertDialog.Action>
+          <Button variant="destructive">Continue</Button>
+        </AlertDialog.Action>
+      </div>
+    </AlertDialog.Content>
+  </AlertDialog.Portal>
+</AlertDialog.Root>
                       )}
                       
                       <div className="pt-2">

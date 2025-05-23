@@ -4,15 +4,11 @@ import { ResearchProject } from '@/lib/database.types';
 import { 
   CachePrefix, 
   CacheExpiration,
-} from '@/lib/utils/cacheUtils';
-import {
-  getCacheKey,
-  getWithAdvancedCache,
+  withCache,
+  removeFromCache,
   invalidateByTags,
-  setWithWriteThrough,
-  CacheStrategy,
   warmupCache
-} from '@/lib/utils/advancedCacheUtils';
+} from '@/lib/utils/clientSafeCacheUtils';
 
 /**
  * Extended ResearchProject interface with related data
@@ -25,7 +21,7 @@ export interface ResearchProjectWithDetails extends ResearchProject {
 }
 
 /**
- * Enhanced cached service for research projects using advanced caching strategies
+ * Enhanced cached service for research projects using client-safe caching
  */
 export class EnhancedCachedResearchProjectService {
   /**
@@ -42,12 +38,9 @@ export class EnhancedCachedResearchProjectService {
     pageSize: number = 10,
     filters: Record<string, any> = {}
   ): Promise<{ data: ResearchProject[]; total: number }> {
-    const cacheKey = getCacheKey(
-      CachePrefix.RESEARCH_PROJECTS,
-      `list:${userId}:${page}:${pageSize}:${JSON.stringify(filters)}`
-    );
+    const cacheKey = `${CachePrefix.RESEARCH_PROJECTS}:list:${userId}:${page}:${pageSize}:${JSON.stringify(filters)}`;
 
-    return getWithAdvancedCache(
+    return withCache(
       cacheKey,
       async () => {
         const supabase = createClient();
@@ -102,12 +95,7 @@ export class EnhancedCachedResearchProjectService {
           total: count || 0
         };
       },
-      {
-        strategy: CacheStrategy.STALE_WHILE_REVALIDATE,
-        expiration: CacheExpiration.MEDIUM,
-        tags: ['research_projects', `user:${userId}`],
-        staleWhileRevalidateWindow: 600 // 10 minutes
-      }
+      CacheExpiration.MEDIUM
     );
   }
 
@@ -121,9 +109,9 @@ export class EnhancedCachedResearchProjectService {
     id: string,
     userId: string
   ): Promise<ResearchProjectWithDetails | null> {
-    const cacheKey = getCacheKey(CachePrefix.RESEARCH_PROJECTS, `detail:${id}`);
+    const cacheKey = `${CachePrefix.RESEARCH_PROJECTS}:detail:${id}`;
 
-    return getWithAdvancedCache(
+    return withCache(
       cacheKey,
       async () => {
         const supabase = createClient();
@@ -154,17 +142,12 @@ export class EnhancedCachedResearchProjectService {
         
         return data as ResearchProjectWithDetails;
       },
-      {
-        strategy: CacheStrategy.STALE_WHILE_REVALIDATE,
-        expiration: CacheExpiration.MEDIUM,
-        tags: ['research_projects', `project:${id}`, `user:${userId}`],
-        staleWhileRevalidateWindow: 300 // 5 minutes
-      }
+      CacheExpiration.MEDIUM
     );
   }
 
   /**
-   * Create a new research project with write-through caching
+   * Create a new research project
    * @param project Project data
    * @param userId User ID
    * @returns Created project
@@ -180,46 +163,27 @@ export class EnhancedCachedResearchProjectService {
       updated_at: new Date().toISOString()
     };
     
-    const writeToDb = async (data: typeof newProject) => {
-      const supabase = createClient();
-      
-      const { data: createdProject, error } = await supabase
-        .from('research_projects')
-        .insert(data)
-        .select()
-        .single();
-      
-      if (error) {
-        logger.error('Error creating research project', { error, project: data });
-        throw error;
-      }
-      
-      return createdProject;
-    };
+    const supabase = createClient();
     
-    // Use write-through caching to ensure data is written to the database first
-    const createdProject = await writeToDb(newProject);
+    const { data: createdProject, error } = await supabase
+      .from('research_projects')
+      .insert(newProject)
+      .select()
+      .single();
+    
+    if (error) {
+      logger.error('Error creating research project', { error, project: newProject });
+      throw error;
+    }
     
     // Invalidate list caches for this user
     await invalidateByTags([`user:${userId}`]);
-    
-    // Cache the new project
-    const cacheKey = getCacheKey(CachePrefix.RESEARCH_PROJECTS, `detail:${createdProject.id}`);
-    await setWithWriteThrough(
-      cacheKey,
-      createdProject,
-      async () => {}, // No-op since we already wrote to the database
-      {
-        expiration: CacheExpiration.MEDIUM,
-        tags: ['research_projects', `project:${createdProject.id}`, `user:${userId}`]
-      }
-    );
     
     return createdProject;
   }
 
   /**
-   * Update a research project with write-through caching
+   * Update a research project
    * @param id Project ID
    * @param updates Project updates
    * @param userId User ID for permission check
@@ -230,34 +194,26 @@ export class EnhancedCachedResearchProjectService {
     updates: Partial<ResearchProject>,
     userId: string
   ): Promise<ResearchProject> {
-    const cacheKey = getCacheKey(CachePrefix.RESEARCH_PROJECTS, `detail:${id}`);
+    const supabase = createClient();
     
-    const writeToDb = async (data: Partial<ResearchProject>) => {
-      const supabase = createClient();
-      
-      const { data: updatedProject, error } = await supabase
-        .from('research_projects')
-        .update({
-          ...data,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .eq('user_id', userId)
-        .select()
-        .single();
-      
-      if (error) {
-        logger.error('Error updating research project', { error, id, updates: data });
-        throw error;
-      }
-      
-      return updatedProject;
-    };
+    const { data: updatedProject, error } = await supabase
+      .from('research_projects')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select()
+      .single();
     
-    // Use write-through caching to ensure data is written to the database first
-    const updatedProject = await writeToDb(updates);
+    if (error) {
+      logger.error('Error updating research project', { error, id, updates });
+      throw error;
+    }
     
     // Invalidate related caches
+    await removeFromCache(`${CachePrefix.RESEARCH_PROJECTS}:detail:${id}`);
     await invalidateByTags([`project:${id}`, `user:${userId}`]);
     
     return updatedProject;
@@ -285,6 +241,7 @@ export class EnhancedCachedResearchProjectService {
       }
       
       // Invalidate related caches
+      await removeFromCache(`${CachePrefix.RESEARCH_PROJECTS}:detail:${id}`);
       await invalidateByTags(['research_projects', `project:${id}`, `user:${userId}`]);
       
       return true;
@@ -304,7 +261,7 @@ export class EnhancedCachedResearchProjectService {
       // Define the cache keys and fetch functions to warm up
       const keysToWarmup = [
         {
-          key: getCacheKey(CachePrefix.RESEARCH_PROJECTS, `list:${userId}:1:10:{}`),
+          key: `${CachePrefix.RESEARCH_PROJECTS}:list:${userId}:1:10:{}`,
           fetch: async () => {
             const supabase = createClient();
             
@@ -330,8 +287,7 @@ export class EnhancedCachedResearchProjectService {
       // Warm up the cache
       await warmupCache(keysToWarmup, {
         expiration: CacheExpiration.MEDIUM,
-        tags: ['research_projects', `user:${userId}`],
-        strategy: CacheStrategy.STALE_WHILE_REVALIDATE
+        tags: ['research_projects', `user:${userId}`]
       });
       
       logger.info('Cache warmed up for user projects', { userId });
@@ -342,4 +298,3 @@ export class EnhancedCachedResearchProjectService {
     }
   }
 }
-

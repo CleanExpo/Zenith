@@ -1,5 +1,5 @@
 import {
-  DataAnalysisService,
+  BaseDataAnalysisService,
   DataAnalysisToolCredentials,
   Dataset,
   DataColumn,
@@ -10,14 +10,14 @@ import {
   VisualizationParams,
   VisualizationResult
 } from "./baseDataAnalysisService";
-import { logger } from "@/lib/logger";
-import { setInCache, CacheExpiration } from "@/lib/utils/clientSafeCacheUtils";
+import { logger } from "./lib/logger";
 import { v4 as uuidv4 } from "uuid";
+import { redisClient } from "./utils/redis";
 
 /**
  * R data analysis service
  */
-export class RDataAnalysisService extends DataAnalysisService {
+export class RDataAnalysisService extends BaseDataAnalysisService {
   protected toolName: string = "R";
   protected baseUrl: string;
   protected apiKey: string;
@@ -38,12 +38,7 @@ export class RDataAnalysisService extends DataAnalysisService {
   async getCachedDatasets(): Promise<Dataset[] | null> { return null; }
   async cacheDatasets(_datasets: Dataset[]): Promise<void> { return; }
   async getCachedDataset(_id: string): Promise<Dataset | null> { return null; }
-  async cacheDataset(dataset: Dataset, key?: string): Promise<void> {
-    const cacheKey = key || this.getDatasetCacheKey(dataset.id);
-    await setInCache(cacheKey, dataset, CacheExpiration.MEDIUM);
-    // Mock database write operation
-    logger.info('Writing dataset to database', { datasetId: dataset.id });
-  }
+  async cacheDataset(_dataset: Dataset): Promise<void> { return; }
   async getCachedAnalysisResult(_id: string): Promise<AnalysisResult | null> { return null; }
   async cacheAnalysisResult(_result: AnalysisResult): Promise<void> { return; }
   async getCachedTransformationResult(_id: string): Promise<TransformationResult | null> { return null; }
@@ -127,7 +122,7 @@ export class RDataAnalysisService extends DataAnalysisService {
         format: "csv",
         size: 1024
       };
-      await this.cacheDataset(dataset, this.getDatasetCacheKey(dataset.id));
+      await this.cacheDataset(dataset);
       logger.info("Retrieved dataset from API", { userId: this.userId, datasetId: id });
       return dataset;
     } catch (error) {
@@ -157,7 +152,7 @@ export class RDataAnalysisService extends DataAnalysisService {
         format: "json",
         size: JSON.stringify(data).length
       };
-      await this.cacheDataset(dataset, this.getDatasetCacheKey(dataset.id));
+      await this.cacheDataset(dataset);
       await this.cacheDatasets([]);
       logger.info("Created dataset", { userId: this.userId, datasetId: dataset.id, name, rowCount: data.length });
       return dataset;
@@ -180,7 +175,7 @@ export class RDataAnalysisService extends DataAnalysisService {
         description: description || dataset.description,
         updatedAt: new Date().toISOString()
       };
-      await this.cacheDataset(updatedDataset, this.getDatasetCacheKey(updatedDataset.id));
+      await this.cacheDataset(updatedDataset);
       await this.cacheDatasets([]);
       logger.info("Updated dataset", { userId: this.userId, datasetId: id, name, description });
       return updatedDataset;
@@ -192,7 +187,8 @@ export class RDataAnalysisService extends DataAnalysisService {
 
   public async deleteDataset(id: string): Promise<boolean> {
     try {
-      // Cache invalidation would be handled by client-safe cache utils
+      const cacheKey = this.getDatasetCacheKey(id);
+      if (typeof window === "undefined" && redisClient) await redisClient.del(cacheKey);
       await this.cacheDatasets([]);
       logger.info("Deleted dataset", { userId: this.userId, datasetId: id });
       return true;
@@ -202,12 +198,16 @@ export class RDataAnalysisService extends DataAnalysisService {
     }
   }
 
-  public async uploadDataset(file: File): Promise<Dataset> {
+  public async uploadDataset(
+    file: File,
+    name: string,
+    description: string
+  ): Promise<Dataset> {
     try {
       const dataset: Dataset = {
         id: uuidv4(),
-        name: file.name,
-        description: `Uploaded dataset from ${file.name}`,
+        name,
+        description,
         columns: [
           { name: "id", type: "numeric", description: "Unique identifier" },
           { name: "name", type: "text", description: "Name of the item" },
@@ -222,34 +222,46 @@ export class RDataAnalysisService extends DataAnalysisService {
         format: file.name.split(".").pop() || "unknown",
         size: file.size
       };
-      await this.cacheDataset(dataset, this.getDatasetCacheKey(dataset.id));
+      await this.cacheDataset(dataset);
       await this.cacheDatasets([]);
-      logger.info("Uploaded dataset", { userId: this.userId, datasetId: dataset.id, fileName: file.name, fileSize: file.size });
+      logger.info("Uploaded dataset", { userId: this.userId, datasetId: dataset.id, name, fileName: file.name, fileSize: file.size });
       return dataset;
     } catch (error) {
-      logger.error("Error uploading dataset", { error: error instanceof Error ? error.message : String(error), userId: this.userId, fileName: file.name });
+      logger.error("Error uploading dataset", { error: error instanceof Error ? error.message : String(error), userId: this.userId, name, fileName: file.name });
       throw error;
     }
   }
 
-  public async downloadDataset(id: string): Promise<Blob> {
+  public async downloadDataset(
+    id: string,
+    format: string
+  ): Promise<Blob> {
     try {
       const dataset = await this.getDataset(id);
-      const content = JSON.stringify({
-        id: dataset.id,
-        name: dataset.name,
-        description: dataset.description,
-        columns: dataset.columns,
-        data: [
-          { id: 1, name: "Item 1", value: 10 },
-          { id: 2, name: "Item 2", value: 20 },
-          { id: 3, name: "Item 3", value: 30 }
-        ]
-      }, null, 2);
-      logger.info("Downloaded dataset", { userId: this.userId, datasetId: id });
-      return new Blob([content], { type: "application/json" });
+      let content = "";
+      if (format === "json") {
+        content = JSON.stringify({
+          id: dataset.id,
+          name: dataset.name,
+          description: dataset.description,
+          columns: dataset.columns,
+          data: [
+            { id: 1, name: "Item 1", value: 10 },
+            { id: 2, name: "Item 2", value: 20 },
+            { id: 3, name: "Item 3", value: 30 }
+          ]
+        }, null, 2);
+      } else if (format === "csv") {
+        content = "id,name,value\n1,Item 1,10\n2,Item 2,20\n3,Item 3,30";
+      } else if (format === "excel") {
+        content = "Excel file content (mock)";
+      } else {
+        throw new Error(`Unsupported format: ${format}`);
+      }
+      logger.info("Downloaded dataset", { userId: this.userId, datasetId: id, format });
+      return new Blob([content], { type: `application/${format}` });
     } catch (error) {
-      logger.error("Error downloading dataset", { error: error instanceof Error ? error.message : String(error), userId: this.userId, datasetId: id });
+      logger.error("Error downloading dataset", { error: error instanceof Error ? error.message : String(error), userId: this.userId, datasetId: id, format });
       throw error;
     }
   }
@@ -313,12 +325,12 @@ export class RDataAnalysisService extends DataAnalysisService {
     }
   }
 
-  public async getAnalysisResult(analysisId: string): Promise<AnalysisResult> {
+  public async getAnalysisResult(id: string): Promise<AnalysisResult> {
     try {
-      const cached = await this.getCachedAnalysisResult(analysisId);
+      const cached = await this.getCachedAnalysisResult(id);
       if (cached) return cached;
       const analysisResult: AnalysisResult = {
-        id: analysisId,
+        id,
         type: "descriptive",
         datasetId: "1",
         params: { type: "descriptive", datasetId: "1" },
@@ -337,33 +349,34 @@ export class RDataAnalysisService extends DataAnalysisService {
         executionTime: 1500
       };
       await this.cacheAnalysisResult(analysisResult);
-      logger.info("Retrieved analysis result from API", { userId: this.userId, analysisId });
+      logger.info("Retrieved analysis result from API", { userId: this.userId, analysisId: id });
       return analysisResult;
     } catch (error) {
-      logger.error("Error getting analysis result", { error: error instanceof Error ? error.message : String(error), userId: this.userId, analysisId });
+      logger.error("Error getting analysis result", { error: error instanceof Error ? error.message : String(error), userId: this.userId, analysisId: id });
       throw error;
     }
   }
 
-  public async deleteAnalysisResult(analysisId: string): Promise<boolean> {
+  public async deleteAnalysisResult(id: string): Promise<boolean> {
     try {
-      // Cache invalidation would be handled by client-safe cache utils
-      logger.info("Deleted analysis result", { userId: this.userId, analysisId });
+      const cacheKey = this.getAnalysisResultCacheKey(id);
+      if (typeof window === "undefined" && redisClient) await redisClient.del(cacheKey);
+      logger.info("Deleted analysis result", { userId: this.userId, analysisId: id });
       return true;
     } catch (error) {
-      logger.error("Error deleting analysis result", { error: error instanceof Error ? error.message : String(error), userId: this.userId, analysisId });
+      logger.error("Error deleting analysis result", { error: error instanceof Error ? error.message : String(error), userId: this.userId, analysisId: id });
       throw error;
     }
   }
 
-  public async createTransformation(datasetId: string, params: TransformationParams): Promise<TransformationResult> {
+  public async transformDataset(params: TransformationParams): Promise<TransformationResult> {
     try {
       const transformationId = uuidv4();
       const resultDatasetId = uuidv4();
       const transformationResult: TransformationResult = {
         id: transformationId,
         type: params.type,
-        datasetId,
+        datasetId: params.datasetId,
         params,
         createdAt: new Date().toISOString(),
         ownerId: this.userId,
@@ -372,24 +385,20 @@ export class RDataAnalysisService extends DataAnalysisService {
         executionTime: 2000
       };
       await this.cacheTransformationResult(transformationResult);
-      logger.info("Created transformation", { userId: this.userId, transformationId, type: params.type, datasetId, resultDatasetId });
+      logger.info("Transformed dataset", { userId: this.userId, transformationId, type: params.type, datasetId: params.datasetId, resultDatasetId });
       return transformationResult;
     } catch (error) {
-      logger.error("Error creating transformation", { error: error instanceof Error ? error.message : String(error), userId: this.userId, type: params.type, datasetId });
+      logger.error("Error transforming dataset", { error: error instanceof Error ? error.message : String(error), userId: this.userId, type: params.type, datasetId: params.datasetId });
       throw error;
     }
   }
 
-  public async transformDataset(params: TransformationParams): Promise<TransformationResult> {
-    return this.createTransformation(params.datasetId, params);
-  }
-
-  public async getTransformationResult(transformationId: string): Promise<TransformationResult> {
+  public async getTransformationResult(id: string): Promise<TransformationResult> {
     try {
-      const cached = await this.getCachedTransformationResult(transformationId);
+      const cached = await this.getCachedTransformationResult(id);
       if (cached) return cached;
       const transformationResult: TransformationResult = {
-        id: transformationId,
+        id,
         type: "filter",
         datasetId: "1",
         params: { type: "filter", datasetId: "1", filter: "value > 10" },
@@ -400,21 +409,22 @@ export class RDataAnalysisService extends DataAnalysisService {
         executionTime: 2000
       };
       await this.cacheTransformationResult(transformationResult);
-      logger.info("Retrieved transformation result from API", { userId: this.userId, transformationId });
+      logger.info("Retrieved transformation result from API", { userId: this.userId, transformationId: id });
       return transformationResult;
     } catch (error) {
-      logger.error("Error getting transformation result", { error: error instanceof Error ? error.message : String(error), userId: this.userId, transformationId });
+      logger.error("Error getting transformation result", { error: error instanceof Error ? error.message : String(error), userId: this.userId, transformationId: id });
       throw error;
     }
   }
 
-  public async deleteTransformationResult(transformationId: string): Promise<boolean> {
+  public async deleteTransformationResult(id: string): Promise<boolean> {
     try {
-      // Cache invalidation would be handled by client-safe cache utils
-      logger.info("Deleted transformation result", { userId: this.userId, transformationId });
+      const cacheKey = this.getTransformationResultCacheKey(id);
+      if (typeof window === "undefined" && redisClient) await redisClient.del(cacheKey);
+      logger.info("Deleted transformation result", { userId: this.userId, transformationId: id });
       return true;
     } catch (error) {
-      logger.error("Error deleting transformation result", { error: error instanceof Error ? error.message : String(error), userId: this.userId, transformationId });
+      logger.error("Error deleting transformation result", { error: error instanceof Error ? error.message : String(error), userId: this.userId, transformationId: id });
       throw error;
     }
   }
@@ -485,12 +495,12 @@ export class RDataAnalysisService extends DataAnalysisService {
     }
   }
 
-  public async getVisualizationResult(visualizationId: string): Promise<VisualizationResult> {
+  public async getVisualizationResult(id: string): Promise<VisualizationResult> {
     try {
-      const cached = await this.getCachedVisualizationResult(visualizationId);
+      const cached = await this.getCachedVisualizationResult(id);
       if (cached) return cached;
       const visualizationResult: VisualizationResult = {
-        id: visualizationId,
+        id,
         type: "bar",
         datasetId: "1",
         params: { type: "bar", datasetId: "1", title: "Sample Bar Chart", xAxis: "name", yAxis: "value" },
@@ -504,7 +514,7 @@ export class RDataAnalysisService extends DataAnalysisService {
           <rect x="190" y="80" width="50" height="30" fill="blue" />
         </svg>`,
         htmlContent: `
-          <div id="visualization-${visualizationId}" class="visualization">
+          <div id="visualization-${id}" class="visualization">
             <h3>Sample Bar Chart</h3>
             <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
               <rect x="10" y="10" width="50" height="100" fill="blue" />
@@ -514,47 +524,28 @@ export class RDataAnalysisService extends DataAnalysisService {
             </svg>
           </div>
         `,
-        viewUrl: `/visualizations/${visualizationId}`,
+        viewUrl: `/visualizations/${id}`,
         executionTime: 1000
       };
       await this.cacheVisualizationResult(visualizationResult);
-      logger.info("Retrieved visualization result from API", { userId: this.userId, visualizationId });
+      logger.info("Retrieved visualization result from API", { userId: this.userId, visualizationId: id });
       return visualizationResult;
     } catch (error) {
-      logger.error("Error getting visualization result", { error: error instanceof Error ? error.message : String(error), userId: this.userId, visualizationId });
+      logger.error("Error getting visualization result", { error: error instanceof Error ? error.message : String(error), userId: this.userId, visualizationId: id });
       throw error;
     }
   }
 
-  public async deleteVisualizationResult(visualizationId: string): Promise<boolean> {
+  public async deleteVisualizationResult(id: string): Promise<boolean> {
     try {
-      // Cache invalidation would be handled by client-safe cache utils
-      logger.info("Deleted visualization result", { userId: this.userId, visualizationId });
+      const cacheKey = `${this.cacheKeyPrefix}:visualization:${id}`;
+      if (typeof window === "undefined" && redisClient) await redisClient.del(cacheKey);
+      logger.info("Deleted visualization result", { userId: this.userId, visualizationId: id });
       return true;
     } catch (error) {
-      logger.error("Error deleting visualization result", { error: error instanceof Error ? error.message : String(error), userId: this.userId, visualizationId });
+      logger.error("Error deleting visualization result", { error: error instanceof Error ? error.message : String(error), userId: this.userId, visualizationId: id });
       throw error;
     }
   }
-
-  // Stub methods to satisfy interface
-  public async executeScript(script: string, params: any): Promise<any> {
-    throw new Error('Method not implemented.');
-  }
-
-  public async updateAnalysis(id: string, params: Partial<AnalysisParams>): Promise<AnalysisResult> {
-    throw new Error('Method not implemented.');
-  }
-
-  public async deleteAnalysis(id: string): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-
-  public async updateTransformation(id: string, params: Partial<TransformationParams>): Promise<TransformationResult> {
-    throw new Error('Method not implemented.');
-  }
-
-  public async deleteTransformation(id: string): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
 }
+// END OF FILE

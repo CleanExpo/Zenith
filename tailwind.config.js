@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 <<<<<<< HEAD
+<<<<<<< HEAD
 const config = {
   darkMode: 'class',
   content: [
@@ -41,6 +42,8 @@ const config = {
 
 module.exports = config;
 =======
+=======
+>>>>>>> ef445f7eaef772d0e4a14069bfae6f16861de46d
 module.exports = {
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -53,4 +56,7 @@ module.exports = {
   },
   plugins: [],
 }
+<<<<<<< HEAD
 >>>>>>> ef445f7 (Initial commit with PowerShell script fix)
+=======
+>>>>>>> ef445f7eaef772d0e4a14069bfae6f16861de46d

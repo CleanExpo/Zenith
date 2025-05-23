@@ -451,7 +451,7 @@ export async function getCacheStats(): Promise<{
 export async function clearAllCache(): Promise<boolean> {
   try {
     // For real Redis client, clear all keys
-    if (/* condition to check if real Redis client */) {
+    if (typeof window === "undefined") {
       await removeByPattern('*');
       logger.info('Cache cleared successfully');
       return true;

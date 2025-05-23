@@ -1,47 +1,3 @@
-<<<<<<< HEAD
-'use client';
-
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-// Example starter component—replace the contents as needed
-export default function CacheMonitoring() {
-  const [status, setStatus] = useState('Idle');
-
-  useEffect(() => {
-    // Placeholder: load or monitor something here
-    setStatus('Monitoring');
-  }, []);
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Cache Monitoring</CardTitle>
-        <CardDescription>Status: {status}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="overview">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="logs">Logs</TabsTrigger>
-          </TabsList>
-          <TabsContent value="overview">
-            <div>Cache overview content goes here.</div>
-          </TabsContent>
-          <TabsContent value="logs">
-            <div>Cache logs go here.</div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-      <CardFooter>
-        <Button onClick={() => setStatus('Refreshed')}>Refresh</Button>
-      </CardFooter>
-    </Card>
-  );
-}
-=======
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -59,16 +15,15 @@ import {
   AlertTriangle,
   Loader2
 } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
-import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
-import { CachePrefix, CacheExpiration } from '@/lib/utils/cacheUtils';
+import { toast } from '@/hooks/use-toast';
 import { 
+  CachePrefix, 
+  CacheExpiration,
   getCacheStats, 
   clearAllCache, 
   invalidateByTags, 
-  warmupCache,
-  CacheStrategy
-} from '@/lib/utils/advancedCacheUtils';
+  warmupCache
+} from '@/lib/utils/clientSafeCacheUtils';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -257,8 +212,7 @@ export default function CacheMonitoring() {
       
       await warmupCache(keys, {
         expiration: CacheExpiration.MEDIUM,
-        tags: [warmupType],
-        strategy: CacheStrategy.STALE_WHILE_REVALIDATE
+        tags: [warmupType]
       });
       
       toast({
@@ -292,6 +246,20 @@ export default function CacheMonitoring() {
   const formatPercentage = (value: number) => {
     return (value * 100).toFixed(2) + '%';
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Cache Monitoring</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="h-[200px] bg-muted animate-pulse rounded-lg" />
+          <div className="h-[200px] bg-muted animate-pulse rounded-lg" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -343,378 +311,366 @@ export default function CacheMonitoring() {
           </TabsTrigger>
         </TabsList>
         
-        {loading ? (
+        <TabsContent value="overview">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <LoadingSkeleton className="h-[200px]" />
-            <LoadingSkeleton className="h-[200px]" />
-          </div>
-        ) : (
-          <>
-            <TabsContent value="overview">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-muted/30 to-card">
-                    <CardTitle className="flex items-center">
-                      <span className="bg-primary/10 p-1.5 rounded-full mr-2">
-                        <Database className="h-4 w-4 text-primary" />
-                      </span>
-                      Cache Overview
-                    </CardTitle>
-                    <CardDescription>
-                      Current cache statistics
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm font-medium">Total Entries</span>
-                          <span className="text-sm font-bold">{stats?.totalEntries || 0}</span>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm font-medium">Total Size</span>
-                          <span className="text-sm font-bold">{formatBytes(stats?.totalSize || 0)}</span>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm font-medium">Hit Rate</span>
-                          <span className="text-sm font-bold">{formatPercentage(stats?.hitRate || 0)}</span>
-                        </div>
-                        <Progress value={stats ? stats.hitRate * 100 : 0} className="h-2" />
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm font-medium">Average Access Count</span>
-                          <span className="text-sm font-bold">{stats?.avgAccessCount.toFixed(2) || 0}</span>
-                        </div>
-                      </div>
+            <Card className="border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+              <CardHeader className="bg-gradient-to-r from-muted/30 to-card">
+                <CardTitle className="flex items-center">
+                  <span className="bg-primary/10 p-1.5 rounded-full mr-2">
+                    <Database className="h-4 w-4 text-primary" />
+                  </span>
+                  Cache Overview
+                </CardTitle>
+                <CardDescription>
+                  Current cache statistics
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Total Entries</span>
+                      <span className="text-sm font-bold">{stats?.totalEntries || 0}</span>
                     </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-muted/30 to-card">
-                    <CardTitle className="flex items-center">
-                      <span className="bg-primary/10 p-1.5 rounded-full mr-2">
-                        <Clock className="h-4 w-4 text-primary" />
-                      </span>
-                      Cache Health
-                    </CardTitle>
-                    <CardDescription>
-                      Cache performance indicators
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      {stats && stats.hitRate < 0.5 && (
-                        <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
-                          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                          <AlertTitle>Low Hit Rate</AlertTitle>
-                          <AlertDescription>
-                            Your cache hit rate is below 50%. Consider warming up the cache or reviewing your caching strategy.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                      
-                      {stats && stats.totalEntries === 0 && (
-                        <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
-                          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                          <AlertTitle>Empty Cache</AlertTitle>
-                          <AlertDescription>
-                            Your cache is empty. Consider warming up the cache to improve application performance.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                      
-                      {stats && stats.hitRate >= 0.8 && (
-                        <Alert variant="default" className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
-                          <Zap className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          <AlertTitle>Excellent Hit Rate</AlertTitle>
-                          <AlertDescription>
-                            Your cache hit rate is above 80%. Your caching strategy is working effectively.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                      
-                      <div className="pt-2">
-                        <h3 className="text-sm font-medium mb-2">Cache Expiration Settings</h3>
-                        <div className="grid grid-cols-3 gap-2 text-sm">
-                          <div className="p-2 bg-muted rounded-md">
-                            <div className="font-medium">Short</div>
-                            <div className="text-muted-foreground">{CacheExpiration.SHORT}s</div>
-                          </div>
-                          <div className="p-2 bg-muted rounded-md">
-                            <div className="font-medium">Medium</div>
-                            <div className="text-muted-foreground">{CacheExpiration.MEDIUM}s</div>
-                          </div>
-                          <div className="p-2 bg-muted rounded-md">
-                            <div className="font-medium">Long</div>
-                            <div className="text-muted-foreground">{CacheExpiration.LONG}s</div>
-                          </div>
-                        </div>
-                      </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Total Size</span>
+                      <span className="text-sm font-bold">{formatBytes(stats?.totalSize || 0)}</span>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Hit Rate</span>
+                      <span className="text-sm font-bold">{formatPercentage(stats?.hitRate || 0)}</span>
+                    </div>
+                    <Progress value={stats ? stats.hitRate * 100 : 0} className="h-2" />
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Average Access Count</span>
+                      <span className="text-sm font-bold">{stats?.avgAccessCount.toFixed(2) || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             
-            <TabsContent value="tags">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-muted/30 to-card">
-                    <CardTitle className="flex items-center">
-                      <span className="bg-primary/10 p-1.5 rounded-full mr-2">
-                        <Tag className="h-4 w-4 text-primary" />
-                      </span>
-                      Cache Tags
-                    </CardTitle>
-                    <CardDescription>
-                      Tags and associated entries
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    {stats && Object.keys(stats.tagStats).length > 0 ? (
-                      <div className="space-y-4">
-                        {Object.entries(stats.tagStats).map(([tag, count]) => (
-                          <div key={tag} className="flex justify-between items-center">
-                            <div className="flex items-center">
-                              <Tag className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <span className="text-sm font-medium">{tag}</span>
-                            </div>
-                            <span className="text-sm bg-muted px-2 py-1 rounded-full">
-                              {count} {count === 1 ? 'entry' : 'entries'}
-                            </span>
+            <Card className="border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+              <CardHeader className="bg-gradient-to-r from-muted/30 to-card">
+                <CardTitle className="flex items-center">
+                  <span className="bg-primary/10 p-1.5 rounded-full mr-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                  </span>
+                  Cache Health
+                </CardTitle>
+                <CardDescription>
+                  Cache performance indicators
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  {stats && stats.hitRate < 0.5 && (
+                    <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <AlertTitle>Low Hit Rate</AlertTitle>
+                      <AlertDescription>
+                        Your cache hit rate is below 50%. Consider warming up the cache or reviewing your caching strategy.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {stats && stats.totalEntries === 0 && (
+                    <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <AlertTitle>Empty Cache</AlertTitle>
+                      <AlertDescription>
+                        Your cache is empty. Consider warming up the cache to improve application performance.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {stats && stats.hitRate >= 0.8 && (
+                    <Alert variant="default" className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+                      <Zap className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <AlertTitle>Excellent Hit Rate</AlertTitle>
+                      <AlertDescription>
+                        Your cache hit rate is above 80%. Your caching strategy is working effectively.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <div className="pt-2">
+                    <h3 className="text-sm font-medium mb-2">Cache Expiration Settings</h3>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      <div className="p-2 bg-muted rounded-md">
+                        <div className="font-medium">Short</div>
+                        <div className="text-muted-foreground">{CacheExpiration.SHORT}s</div>
+                      </div>
+                      <div className="p-2 bg-muted rounded-md">
+                        <div className="font-medium">Medium</div>
+                        <div className="text-muted-foreground">{CacheExpiration.MEDIUM}s</div>
+                      </div>
+                      <div className="p-2 bg-muted rounded-md">
+                        <div className="font-medium">Long</div>
+                        <div className="text-muted-foreground">{CacheExpiration.LONG}s</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="tags">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+              <CardHeader className="bg-gradient-to-r from-muted/30 to-card">
+                <CardTitle className="flex items-center">
+                  <span className="bg-primary/10 p-1.5 rounded-full mr-2">
+                    <Tag className="h-4 w-4 text-primary" />
+                  </span>
+                  Cache Tags
+                </CardTitle>
+                <CardDescription>
+                  Tags and associated entries
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {stats && Object.keys(stats.tagStats).length > 0 ? (
+                  <div className="space-y-4">
+                    {Object.entries(stats.tagStats).map(([tag, count]) => (
+                      <div key={tag} className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <Tag className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span className="text-sm font-medium">{tag}</span>
+                        </div>
+                        <span className="text-sm bg-muted px-2 py-1 rounded-full">
+                          {count} {count === 1 ? 'entry' : 'entries'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    No tags found in cache
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card className="border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+              <CardHeader className="bg-gradient-to-r from-muted/30 to-card">
+                <CardTitle className="flex items-center">
+                  <span className="bg-primary/10 p-1.5 rounded-full mr-2">
+                    <Trash2 className="h-4 w-4 text-primary" />
+                  </span>
+                  Invalidate Tags
+                </CardTitle>
+                <CardDescription>
+                  Clear cache entries by tag
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="tag-select">Select Tags</Label>
+                    <Select
+                      onValueChange={(value) => {
+                        if (!selectedTags.includes(value)) {
+                          setSelectedTags([...selectedTags, value]);
+                        }
+                      }}
+                      value=""
+                    >
+                      <SelectTrigger id="tag-select">
+                        <SelectValue placeholder="Select a tag" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {stats && Object.keys(stats.tagStats).map((tag) => (
+                          <SelectItem key={tag} value={tag}>
+                            {tag} ({stats.tagStats[tag]} {stats.tagStats[tag] === 1 ? 'entry' : 'entries'})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <div className="flex-1">
+                      <Label htmlFor="custom-tag">Custom Tag</Label>
+                      <div className="flex space-x-2">
+                        <Input
+                          id="custom-tag"
+                          value={customTag}
+                          onChange={(e) => setCustomTag(e.target.value)}
+                          placeholder="Enter custom tag"
+                        />
+                        <Button type="button" onClick={handleAddCustomTag} variant="outline">
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {selectedTags.length > 0 && (
+                    <div className="pt-2">
+                      <Label>Selected Tags</Label>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {selectedTags.map((tag) => (
+                          <div
+                            key={tag}
+                            className="flex items-center bg-muted px-3 py-1 rounded-full text-sm"
+                          >
+                            <span>{tag}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveTag(tag)}
+                              className="ml-2 text-muted-foreground hover:text-destructive"
+                            >
+                              &times;
+                            </button>
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        No tags found in cache
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                <Card className="border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-muted/30 to-card">
-                    <CardTitle className="flex items-center">
-                      <span className="bg-primary/10 p-1.5 rounded-full mr-2">
-                        <Trash2 className="h-4 w-4 text-primary" />
-                      </span>
-                      Invalidate Tags
-                    </CardTitle>
-                    <CardDescription>
-                      Clear cache entries by tag
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="tag-select">Select Tags</Label>
-                        <Select
-                          onValueChange={(value) => {
-                            if (!selectedTags.includes(value)) {
-                              setSelectedTags([...selectedTags, value]);
-                            }
-                          }}
-                          value=""
-                        >
-                          <SelectTrigger id="tag-select">
-                            <SelectValue placeholder="Select a tag" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {stats && Object.keys(stats.tagStats).map((tag) => (
-                              <SelectItem key={tag} value={tag}>
-                                {tag} ({stats.tagStats[tag]} {stats.tagStats[tag] === 1 ? 'entry' : 'entries'})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="flex space-x-2">
-                        <div className="flex-1">
-                          <Label htmlFor="custom-tag">Custom Tag</Label>
-                          <div className="flex space-x-2">
-                            <Input
-                              id="custom-tag"
-                              value={customTag}
-                              onChange={(e) => setCustomTag(e.target.value)}
-                              placeholder="Enter custom tag"
-                            />
-                            <Button type="button" onClick={handleAddCustomTag} variant="outline">
-                              Add
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {selectedTags.length > 0 && (
-                        <div className="pt-2">
-                          <Label>Selected Tags</Label>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {selectedTags.map((tag) => (
-                              <div
-                                key={tag}
-                                className="flex items-center bg-muted px-3 py-1 rounded-full text-sm"
-                              >
-                                <span>{tag}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveTag(tag)}
-                                  className="ml-2 text-muted-foreground hover:text-destructive"
-                                >
-                                  &times;
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button
-                      onClick={handleInvalidateTags}
-                      disabled={invalidating || selectedTags.length === 0}
-                      className="w-full"
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  onClick={handleInvalidateTags}
+                  disabled={invalidating || selectedTags.length === 0}
+                  className="w-full"
+                >
+                  {invalidating ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 mr-2" />
+                  )}
+                  Invalidate Selected Tags
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="management">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+              <CardHeader className="bg-gradient-to-r from-muted/30 to-card">
+                <CardTitle className="flex items-center">
+                  <span className="bg-primary/10 p-1.5 rounded-full mr-2">
+                    <Zap className="h-4 w-4 text-primary" />
+                  </span>
+                  Cache Warmup
+                </CardTitle>
+                <CardDescription>
+                  Pre-populate cache with frequently accessed data
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="warmup-type">Data Type</Label>
+                    <Select
+                      value={warmupType}
+                      onValueChange={setWarmupType}
                     >
-                      {invalidating ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4 mr-2" />
-                      )}
-                      Invalidate Selected Tags
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </div>
-            </TabsContent>
+                      <SelectTrigger id="warmup-type">
+                        <SelectValue placeholder="Select data type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="research_projects">Research Projects</SelectItem>
+                        <SelectItem value="teams">Teams</SelectItem>
+                        <SelectItem value="analytics">Analytics</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch id="stale-while-revalidate" defaultChecked />
+                    <Label htmlFor="stale-while-revalidate">Use Stale-While-Revalidate Strategy</Label>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  onClick={handleWarmupCache}
+                  disabled={warming}
+                  className="w-full"
+                >
+                  {warming ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Zap className="h-4 w-4 mr-2" />
+                  )}
+                  Warm Up Cache
+                </Button>
+              </CardFooter>
+            </Card>
             
-            <TabsContent value="management">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-muted/30 to-card">
-                    <CardTitle className="flex items-center">
-                      <span className="bg-primary/10 p-1.5 rounded-full mr-2">
-                        <Zap className="h-4 w-4 text-primary" />
-                      </span>
-                      Cache Warmup
-                    </CardTitle>
-                    <CardDescription>
-                      Pre-populate cache with frequently accessed data
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="warmup-type">Data Type</Label>
-                        <Select
-                          value={warmupType}
-                          onValueChange={setWarmupType}
-                        >
-                          <SelectTrigger id="warmup-type">
-                            <SelectValue placeholder="Select data type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="research_projects">Research Projects</SelectItem>
-                            <SelectItem value="teams">Teams</SelectItem>
-                            <SelectItem value="analytics">Analytics</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Switch id="stale-while-revalidate" defaultChecked />
-                        <Label htmlFor="stale-while-revalidate">Use Stale-While-Revalidate Strategy</Label>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button
-                      onClick={handleWarmupCache}
-                      disabled={warming}
-                      className="w-full"
-                    >
-                      {warming ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Zap className="h-4 w-4 mr-2" />
-                      )}
-                      Warm Up Cache
-                    </Button>
-                  </CardFooter>
-                </Card>
-                
-                <Card className="border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-muted/30 to-card">
-                    <CardTitle className="flex items-center">
-                      <span className="bg-primary/10 p-1.5 rounded-full mr-2">
-                        <Database className="h-4 w-4 text-primary" />
-                      </span>
-                      Cache Configuration
-                    </CardTitle>
-                    <CardDescription>
-                      Configure cache settings
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="short-expiration">Short Expiration (seconds)</Label>
-                        <Input
-                          id="short-expiration"
-                          type="number"
-                          defaultValue={CacheExpiration.SHORT}
-                          disabled
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="medium-expiration">Medium Expiration (seconds)</Label>
-                        <Input
-                          id="medium-expiration"
-                          type="number"
-                          defaultValue={CacheExpiration.MEDIUM}
-                          disabled
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="long-expiration">Long Expiration (seconds)</Label>
-                        <Input
-                          id="long-expiration"
-                          type="number"
-                          defaultValue={CacheExpiration.LONG}
-                          disabled
-                        />
-                      </div>
-                      
-                      <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-                        <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <AlertTitle>Configuration Note</AlertTitle>
-                        <AlertDescription>
-                          Cache expiration settings can be modified in the codebase. These values are shown for reference only.
-                        </AlertDescription>
-                      </Alert>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </>
-        )}
+            <Card className="border-muted-foreground/20 hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+              <CardHeader className="bg-gradient-to-r from-muted/30 to-card">
+                <CardTitle className="flex items-center">
+                  <span className="bg-primary/10 p-1.5 rounded-full mr-2">
+                    <Database className="h-4 w-4 text-primary" />
+                  </span>
+                  Cache Configuration
+                </CardTitle>
+                <CardDescription>
+                  Configure cache settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="short-expiration">Short Expiration (seconds)</Label>
+                    <Input
+                      id="short-expiration"
+                      type="number"
+                      defaultValue={CacheExpiration.SHORT}
+                      disabled
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="medium-expiration">Medium Expiration (seconds)</Label>
+                    <Input
+                      id="medium-expiration"
+                      type="number"
+                      defaultValue={CacheExpiration.MEDIUM}
+                      disabled
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="long-expiration">Long Expiration (seconds)</Label>
+                    <Input
+                      id="long-expiration"
+                      type="number"
+                      defaultValue={CacheExpiration.LONG}
+                      disabled
+                    />
+                  </div>
+                  
+                  <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                    <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <AlertTitle>Configuration Note</AlertTitle>
+                    <AlertDescription>
+                      Cache expiration settings can be modified in the codebase. These values are shown for reference only.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
 }
-
-
->>>>>>> ef445f7 (Initial commit with PowerShell script fix)

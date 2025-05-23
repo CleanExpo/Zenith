@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
-import { CachePrefix, CacheExpiration, withCache, removeFromCache, removeByPattern } from '@/lib/utils/cacheUtils';
+import { CachePrefix, CacheExpiration, withCache, removeFromCache, removeByPattern } from '@/lib/utils/clientSafeCacheUtils';
 import { 
   advancedAnalyticsService, 
   type ProjectCompletionPrediction, 

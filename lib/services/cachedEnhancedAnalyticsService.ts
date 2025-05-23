@@ -1,5 +1,5 @@
 import { enhancedAnalyticsService, CrossDomainMetric, CombinedAnalytics, FundingEfficiency, PatentImpact } from './enhancedAnalyticsService';
-import { getFromCache, setInCache, removeFromCache, CachePrefix, CacheExpiration } from '@/lib/utils/cacheUtils';
+import { getFromCache, setInCache, removeFromCache, CachePrefix, CacheExpiration } from '@/lib/utils/clientSafeCacheUtils';
 import { logger } from '@/lib/logger';
 
 class CachedEnhancedAnalyticsService {

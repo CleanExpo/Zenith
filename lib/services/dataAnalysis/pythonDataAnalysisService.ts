@@ -5,7 +5,7 @@
  */
 
 import { 
-  BaseDataAnalysisService, 
+  DataAnalysisService, 
   DataAnalysisToolCredentials,
   Dataset,
   DataColumn,
@@ -25,7 +25,7 @@ const simpleCache = new SimpleCache();
 /**
  * Python data analysis service
  */
-export class PythonDataAnalysisService extends BaseDataAnalysisService {
+export class PythonDataAnalysisService extends DataAnalysisService {
   protected toolName: string = 'Python';
   protected baseUrl: string;
   protected apiKey: string;
@@ -145,8 +145,6 @@ export class PythonDataAnalysisService extends BaseDataAnalysisService {
     }
   }
 
-  // Add your other methods below...
-
   public async createDataset(name: string, description: string, columns: DataColumn[], data: any[]): Promise<Dataset> {
     try {
       const dataset: Dataset = {
@@ -186,44 +184,45 @@ export class PythonDataAnalysisService extends BaseDataAnalysisService {
     }
   }
 
-public async updateDataset(id: string, name?: string, description?: string): Promise<Dataset> {
-  try {
-    const dataset = await this.getCachedDataset(id);
+  public async updateDataset(id: string, name?: string, description?: string): Promise<Dataset> {
+    try {
+      const dataset = await this.getCachedDataset(id);
 
-    if (!dataset) {
-      throw new Error(`Dataset with ID ${id} not found.`);
+      if (!dataset) {
+        throw new Error(`Dataset with ID ${id} not found.`);
+      }
+
+      if (name) {
+        dataset.name = name;
+      }
+
+      if (description) {
+        dataset.description = description;
+      }
+
+      dataset.updatedAt = new Date().toISOString();
+
+      await this.cacheDataset(dataset);
+
+      logger.info('Updated dataset', {
+        userId: this.userId,
+        datasetId: id,
+        name: dataset.name,
+        description: dataset.description
+      });
+
+      return dataset;
+    } catch (error) {
+      logger.error('Error updating dataset', {
+        error: error instanceof Error ? error.message : String(error),
+        userId: this.userId,
+        datasetId: id
+      });
+
+      throw error;
     }
-
-    if (name) {
-      dataset.name = name;
-    }
-
-    if (description) {
-      dataset.description = description;
-    }
-
-    dataset.updatedAt = new Date().toISOString();
-
-    await this.cacheDataset(dataset);
-
-    logger.info('Updated dataset', {
-      userId: this.userId,
-      datasetId: id,
-      name: dataset.name,
-      description: dataset.description
-    });
-
-    return dataset;
-  } catch (error) {
-    logger.error('Error updating dataset', {
-      error: error instanceof Error ? error.message : String(error),
-      userId: this.userId,
-      datasetId: id
-    });
-
-    throw error;
   }
-}
+
   public async deleteDataset(id: string): Promise<boolean> {
     throw new Error('Method not implemented.');
   }
@@ -350,30 +349,30 @@ public async updateDataset(id: string, name?: string, description?: string): Pro
   }
 
   // Caching methods
-protected async getCachedDatasets(): Promise<Dataset[] | null> {
-  const cacheKey = `${this.cacheKeyPrefix}:datasets`;
-  const cachedData = await simpleCache.get(cacheKey);
-  return cachedData ? JSON.parse(cachedData) : null;
-}
+  protected async getCachedDatasets(): Promise<Dataset[] | null> {
+    const cacheKey = `${this.cacheKeyPrefix}:datasets`;
+    const cachedData = await simpleCache.get(cacheKey);
+    return cachedData ? JSON.parse(cachedData) : null;
+  }
 
-protected async getCachedDataset(id: string): Promise<Dataset | null> {
-  const cacheKey = `${this.cacheKeyPrefix}:dataset:${id}`;
-  const cachedData = await simpleCache.get(cacheKey);
-  return cachedData ? JSON.parse(cachedData) : null;
-}
+  protected async getCachedDataset(id: string): Promise<Dataset | null> {
+    const cacheKey = `${this.cacheKeyPrefix}:dataset:${id}`;
+    const cachedData = await simpleCache.get(cacheKey);
+    return cachedData ? JSON.parse(cachedData) : null;
+  }
 
-protected async cacheDataset(dataset: Dataset): Promise<void> {
-  const cacheKey = `${this.cacheKeyPrefix}:dataset:${dataset.id}`;
-  await simpleCache.set(cacheKey, JSON.stringify(dataset));
-}
+  protected async cacheDataset(dataset: Dataset): Promise<void> {
+    const cacheKey = `${this.cacheKeyPrefix}:dataset:${dataset.id}`;
+    simpleCache.set(cacheKey, JSON.stringify(dataset), 3600); // 1 hour TTL
+  }
 
-protected async cacheDatasets(datasets: Dataset[]): Promise<void> {
-  const cacheKey = `${this.cacheKeyPrefix}:datasets`;
-  await simpleCache.set(cacheKey, JSON.stringify(datasets));
-}
+  protected async cacheDatasets(datasets: Dataset[]): Promise<void> {
+    const cacheKey = `${this.cacheKeyPrefix}:datasets`;
+    simpleCache.set(cacheKey, JSON.stringify(datasets), 3600); // 1 hour TTL
+  }
 
-protected async cacheVisualizationResult(visualizationResult: VisualizationResult): Promise<void> {
-  const cacheKey = `${this.cacheKeyPrefix}:visualization:${visualizationResult.id}`;
-  await simpleCache.set(cacheKey, JSON.stringify(visualizationResult));
-}
+  protected async cacheVisualizationResult(visualizationResult: VisualizationResult): Promise<void> {
+    const cacheKey = `${this.cacheKeyPrefix}:visualization:${visualizationResult.id}`;
+    simpleCache.set(cacheKey, JSON.stringify(visualizationResult), 3600); // 1 hour TTL
+  }
 }

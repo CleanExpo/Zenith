@@ -3,7 +3,7 @@ import { logger } from '@/lib/logger';
 import { externalDataService } from './externalDataService';
 import { enhancedAnalyticsService } from './enhancedAnalyticsService';
 import { enhancedMlPredictionService } from './enhancedMlPredictionService';
-import { CachePrefix, CacheExpiration, withCache, removeFromCache, removeByPattern } from '@/lib/utils/cacheUtils';
+import { CachePrefix, CacheExpiration, withCache, removeFromCache, removeByPattern } from '@/lib/utils/clientSafeCacheUtils';
 import { customReportService, type ReportTemplate, type CustomReport, type ReportSection, type ReportShare } from './customReportService';
 
 /**
@@ -17,7 +17,7 @@ export class CachedCustomReportService {
    */
   async getReportTemplates(): Promise<ReportTemplate[]> {
     try {
-      const cacheKey = `${CachePrefix.SEARCH}:report_templates`;
+      const cacheKey = `${CachePrefix.SEARCH_RESULTS}:report_templates`;
       
       return await withCache(
         cacheKey,
@@ -39,7 +39,7 @@ export class CachedCustomReportService {
    */
   async getReportTemplateById(templateId: string): Promise<ReportTemplate | null> {
     try {
-      const cacheKey = `${CachePrefix.SEARCH}:report_template:${templateId}`;
+      const cacheKey = `${CachePrefix.SEARCH_RESULTS}:report_template:${templateId}`;
       
       return await withCache(
         cacheKey,
@@ -65,7 +65,7 @@ export class CachedCustomReportService {
       
       if (result) {
         // Invalidate templates cache
-        await removeFromCache(`${CachePrefix.SEARCH}:report_templates`);
+        await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:report_templates`);
         logger.info('Invalidated report templates cache after creation');
       }
       
@@ -81,7 +81,7 @@ export class CachedCustomReportService {
    */
   async getUserReports(userId: string): Promise<CustomReport[]> {
     try {
-      const cacheKey = `${CachePrefix.SEARCH}:user_reports:${userId}`;
+      const cacheKey = `${CachePrefix.SEARCH_RESULTS}:user_reports:${userId}`;
       
       return await withCache(
         cacheKey,
@@ -103,7 +103,7 @@ export class CachedCustomReportService {
    */
   async getProjectReports(projectId: string): Promise<CustomReport[]> {
     try {
-      const cacheKey = `${CachePrefix.SEARCH}:project_reports:${projectId}`;
+      const cacheKey = `${CachePrefix.SEARCH_RESULTS}:project_reports:${projectId}`;
       
       return await withCache(
         cacheKey,
@@ -125,7 +125,7 @@ export class CachedCustomReportService {
    */
   async getReportById(reportId: string): Promise<CustomReport | null> {
     try {
-      const cacheKey = `${CachePrefix.SEARCH}:report:${reportId}`;
+      const cacheKey = `${CachePrefix.SEARCH_RESULTS}:report:${reportId}`;
       
       return await withCache(
         cacheKey,
@@ -152,13 +152,13 @@ export class CachedCustomReportService {
       if (result) {
         // Invalidate user reports cache
         if (report.user_id) {
-          await removeFromCache(`${CachePrefix.SEARCH}:user_reports:${report.user_id}`);
+          await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:user_reports:${report.user_id}`);
           logger.info('Invalidated user reports cache after creation', { userId: report.user_id });
         }
         
         // Invalidate project reports cache
         if (report.project_id) {
-          await removeFromCache(`${CachePrefix.SEARCH}:project_reports:${report.project_id}`);
+          await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:project_reports:${report.project_id}`);
           logger.info('Invalidated project reports cache after creation', { projectId: report.project_id });
         }
       }
@@ -182,24 +182,24 @@ export class CachedCustomReportService {
       
       if (result) {
         // Invalidate report cache
-        await removeFromCache(`${CachePrefix.SEARCH}:report:${reportId}`);
+        await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:report:${reportId}`);
         logger.info('Invalidated report cache after update', { reportId });
         
         // Invalidate user reports cache
         if (existingReport?.user_id) {
-          await removeFromCache(`${CachePrefix.SEARCH}:user_reports:${existingReport.user_id}`);
+          await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:user_reports:${existingReport.user_id}`);
           logger.info('Invalidated user reports cache after update', { userId: existingReport.user_id });
         }
         
         // Invalidate project reports cache
         if (existingReport?.project_id) {
-          await removeFromCache(`${CachePrefix.SEARCH}:project_reports:${existingReport.project_id}`);
+          await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:project_reports:${existingReport.project_id}`);
           logger.info('Invalidated project reports cache after update', { projectId: existingReport.project_id });
         }
         
         // If project_id changed, invalidate the new project's cache too
         if (updates.project_id && updates.project_id !== existingReport?.project_id) {
-          await removeFromCache(`${CachePrefix.SEARCH}:project_reports:${updates.project_id}`);
+          await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:project_reports:${updates.project_id}`);
           logger.info('Invalidated new project reports cache after update', { projectId: updates.project_id });
         }
       }
@@ -223,22 +223,22 @@ export class CachedCustomReportService {
       
       if (result) {
         // Invalidate report cache
-        await removeFromCache(`${CachePrefix.SEARCH}:report:${reportId}`);
+        await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:report:${reportId}`);
         logger.info('Invalidated report cache after deletion', { reportId });
         
         // Invalidate report sections cache
-        await removeFromCache(`${CachePrefix.SEARCH}:report_sections:${reportId}`);
+        await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:report_sections:${reportId}`);
         logger.info('Invalidated report sections cache after deletion', { reportId });
         
         // Invalidate user reports cache
         if (existingReport?.user_id) {
-          await removeFromCache(`${CachePrefix.SEARCH}:user_reports:${existingReport.user_id}`);
+          await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:user_reports:${existingReport.user_id}`);
           logger.info('Invalidated user reports cache after deletion', { userId: existingReport.user_id });
         }
         
         // Invalidate project reports cache
         if (existingReport?.project_id) {
-          await removeFromCache(`${CachePrefix.SEARCH}:project_reports:${existingReport.project_id}`);
+          await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:project_reports:${existingReport.project_id}`);
           logger.info('Invalidated project reports cache after deletion', { projectId: existingReport.project_id });
         }
       }
@@ -255,7 +255,7 @@ export class CachedCustomReportService {
    */
   async getReportSections(reportId: string): Promise<ReportSection[]> {
     try {
-      const cacheKey = `${CachePrefix.SEARCH}:report_sections:${reportId}`;
+      const cacheKey = `${CachePrefix.SEARCH_RESULTS}:report_sections:${reportId}`;
       
       return await withCache(
         cacheKey,
@@ -281,7 +281,7 @@ export class CachedCustomReportService {
       
       if (result) {
         // Invalidate report sections cache
-        await removeFromCache(`${CachePrefix.SEARCH}:report_sections:${section.report_id}`);
+        await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:report_sections:${section.report_id}`);
         logger.info('Invalidated report sections cache after creation', { reportId: section.report_id });
       }
       
@@ -301,7 +301,7 @@ export class CachedCustomReportService {
       
       if (result) {
         // Invalidate report sections cache
-        await removeFromCache(`${CachePrefix.SEARCH}:report_sections:${reportId}`);
+        await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:report_sections:${reportId}`);
         logger.info('Invalidated report sections cache after update', { reportId });
       }
       
@@ -321,7 +321,7 @@ export class CachedCustomReportService {
       
       if (result) {
         // Invalidate report sections cache
-        await removeFromCache(`${CachePrefix.SEARCH}:report_sections:${reportId}`);
+        await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:report_sections:${reportId}`);
         logger.info('Invalidated report sections cache after deletion', { reportId });
       }
       
@@ -341,11 +341,11 @@ export class CachedCustomReportService {
       
       if (result) {
         // Invalidate report cache
-        await removeFromCache(`${CachePrefix.SEARCH}:report:${reportId}`);
+        await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:report:${reportId}`);
         logger.info('Invalidated report cache after generation', { reportId });
         
         // Invalidate report with external data cache
-        await removeFromCache(`${CachePrefix.SEARCH}:report_with_external_data:${reportId}`);
+        await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:report_with_external_data:${reportId}`);
         logger.info('Invalidated report with external data cache after generation', { reportId });
       }
       
@@ -382,7 +382,7 @@ export class CachedCustomReportService {
    */
   async getReportShares(reportId: string): Promise<ReportShare[]> {
     try {
-      const cacheKey = `${CachePrefix.SEARCH}:report_shares:${reportId}`;
+      const cacheKey = `${CachePrefix.SEARCH_RESULTS}:report_shares:${reportId}`;
       
       return await withCache(
         cacheKey,
@@ -408,7 +408,7 @@ export class CachedCustomReportService {
       
       if (result) {
         // Invalidate report shares cache
-        await removeFromCache(`${CachePrefix.SEARCH}:report_shares:${reportId}`);
+        await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:report_shares:${reportId}`);
         logger.info('Invalidated report shares cache after removal', { reportId });
       }
       
@@ -428,12 +428,12 @@ export class CachedCustomReportService {
       
       if (result) {
         // Invalidate project reports cache
-        await removeFromCache(`${CachePrefix.SEARCH}:project_reports:${projectId}`);
+        await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:project_reports:${projectId}`);
         logger.info('Invalidated project reports cache after creation from template', { projectId });
         
         // Invalidate user reports cache if user_id is available
         if (result.user_id) {
-          await removeFromCache(`${CachePrefix.SEARCH}:user_reports:${result.user_id}`);
+          await removeFromCache(`${CachePrefix.SEARCH_RESULTS}:user_reports:${result.user_id}`);
           logger.info('Invalidated user reports cache after creation from template', { userId: result.user_id });
         }
       }
@@ -464,7 +464,7 @@ export class CachedCustomReportService {
    */
   async getReportWithExternalData(reportId: string): Promise<any> {
     try {
-      const cacheKey = `${CachePrefix.SEARCH}:report_with_external_data:${reportId}`;
+      const cacheKey = `${CachePrefix.SEARCH_RESULTS}:report_with_external_data:${reportId}`;
       
       return await withCache(
         cacheKey,
