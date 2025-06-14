@@ -1,0 +1,149 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: zenith-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zenith_db
+      POSTGRES_USER: zenith_user
+      POSTGRES_PASSWORD: zenith_pass
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./packages/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zenith_user -d zenith_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - zenith-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: zenith-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass zenith_redis_pass
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - zenith-network
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    container_name: zenith-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: postgresql://zenith_user:zenith_pass@postgres:5432/zenith_db
+      REDIS_URL: redis://:zenith_redis_pass@redis:6379
+      JWT_SECRET: zenith-super-secure-jwt-secret-32-characters-long
+      JWT_REFRESH_SECRET: zenith-super-secure-refresh-secret-32-chars
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/backend:/app
+      - /app/node_modules
+      - ./packages:/packages
+    networks:
+      - zenith-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Dashboard
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    container_name: zenith-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_WS_URL: ws://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - zenith-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: zenith-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@zenith.local
+      PGADMIN_DEFAULT_PASSWORD: zenith_admin_pass
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - zenith-network
+
+  # Redis Commander for cache management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: zenith-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: "local:redis:6379:0:zenith_redis_pass"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - zenith-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  zenith-network:
+    driver: bridge
+    name: zenith-network

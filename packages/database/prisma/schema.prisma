@@ -1,0 +1,355 @@
+// Zenith Platform Database Schema
+generator client {
+  provider = "prisma-client-js"
+  output   = "../dist/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum BusinessCategory {
+  RESTORATION
+  PLUMBING
+  ELECTRICAL
+  HVAC
+  ROOFING
+  LANDSCAPING
+  CLEANING
+  PEST_CONTROL
+  SECURITY
+  AUTOMOTIVE
+  REAL_ESTATE
+  LEGAL_SERVICES
+  ACCOUNTING
+  CONSULTING
+  MARKETING
+  TECHNOLOGY
+  HEALTHCARE
+  FITNESS
+  FOOD_SERVICE
+  RETAIL
+  MANUFACTURING
+  CONSTRUCTION
+  EDUCATION
+  NONPROFIT
+  OTHER
+}
+
+enum OnboardingStatus {
+  PENDING
+  ONBOARDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  ASSETS_GENERATED
+}
+
+enum AgentType {
+  ONBOARDING_ORCHESTRATOR
+  WEBSITE_CRAWLER
+  SEO_ANALYZER
+  CONTENT_GENERATOR
+  QUALITY_ASSURANCE
+  VISUAL_ASSET_GENERATOR
+  ANALYTICS_AGGREGATOR
+  MASTER_ORCHESTRATOR
+  UX_DESIGN
+  FRONTEND_DEVELOPMENT
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum WorkflowStatus {
+  PENDING
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+  PAUSED
+}
+
+enum TaskStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
+// Core Models
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          UserRole  @default(USER)
+  avatar        String?
+  verified      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  businesses     Business[]
+  refreshTokens  RefreshToken[]
+
+  @@index([email])
+  @@index([role])
+  @@index([createdAt])
+  @@index([lastLoginAt])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model Business {
+  id                String            @id @default(cuid())
+  name              String
+  category          BusinessCategory
+  location          String
+  website           String?
+  phone             String?
+  email             String?
+  description       String?
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+  country           String           @default("US")
+  onboardingStatus  OnboardingStatus  @default(PENDING)
+  ownerId           String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  completedAt       DateTime?
+  metadata          Json?             // Additional business data
+
+  // Relations
+  owner               User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  visualAssets        VisualAsset[]
+  analyticsReports    AnalyticsReport[]
+  workflowExecutions  WorkflowExecution[]
+  agentHealthChecks   AgentHealthCheck[]
+  seoAnalytics        SeoAnalytics[]
+  contentPieces       ContentPiece[]
+
+  @@index([ownerId])
+  @@index([category])
+  @@index([onboardingStatus])
+  @@index([createdAt])
+  @@index([ownerId, onboardingStatus])
+  @@index([category, onboardingStatus])
+  @@map("businesses")
+}
+
+model VisualAsset {
+  id               String   @id @default(cuid())
+  assetType        String   // hero_banner, service_image, team_photo, logo, social_media
+  title            String
+  description      String?
+  imageUrl         String?
+  altText          String?
+  dimensions       String?  // e.g., "1920x1080"
+  fileSize         String?
+  style            String?
+  usage            String?
+  prompt           String?  // AI generation prompt
+  businessId       String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([assetType])
+  @@index([createdAt])
+  @@index([businessId, assetType])
+  @@map("visual_assets")
+}
+
+model ContentPiece {
+  id          String   @id @default(cuid())
+  type        String   // blog_post, service_page, about, homepage, meta_description
+  title       String
+  content     String   // Markdown content
+  seoTitle    String?
+  seoDescription String?
+  keywords    String[] // SEO keywords
+  businessId  String
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([type])
+  @@index([published])
+  @@index([createdAt])
+  @@map("content_pieces")
+}
+
+model SeoAnalytics {
+  id                String   @id @default(cuid())
+  targetKeywords    String[] // Target keywords for this business
+  currentRankings   Json?    // Current SERP rankings
+  competitorAnalysis Json?   // Competitor analysis data
+  seoScore          Int?     // Overall SEO score (0-100)
+  recommendations   Json?    // SEO improvement recommendations
+  businessId        String
+  analyzedAt        DateTime @default(now())
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([analyzedAt])
+  @@map("seo_analytics")
+}
+
+model AnalyticsReport {
+  id          String   @id @default(cuid())
+  reportType  String   // daily, weekly, monthly, custom, onboarding
+  title       String
+  data        Json     // JSON data containing metrics and analysis
+  generatedAt DateTime @default(now())
+  businessId  String
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([reportType])
+  @@index([generatedAt])
+  @@index([businessId, reportType])
+  @@map("analytics_reports")
+}
+
+model WorkflowExecution {
+  id            String          @id @default(cuid())
+  name          String
+  type          String          // onboarding, seo_optimization, content_generation
+  status        WorkflowStatus  @default(PENDING)
+  startedAt     DateTime        @default(now())
+  completedAt   DateTime?
+  currentStep   Int             @default(0)
+  totalSteps    Int             @default(1)
+  progress      Json?           // Progress data and artifacts
+  metadata      Json?           // Additional workflow metadata
+  error         String?         // Error message if failed
+  businessId    String
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  tasks    WorkflowTask[]
+
+  @@index([businessId])
+  @@index([status])
+  @@index([startedAt])
+  @@index([type])
+  @@index([businessId, status])
+  @@index([status, startedAt])
+  @@map("workflow_executions")
+}
+
+model WorkflowTask {
+  id                  String     @id @default(cuid())
+  name                String
+  agentType           AgentType
+  status              TaskStatus @default(PENDING)
+  startedAt           DateTime?
+  completedAt         DateTime?
+  input               Json?      // Task input data
+  output              Json?      // Task output data
+  error               String?    // Error message if failed
+  workflowExecutionId String
+
+  // Relations
+  workflowExecution WorkflowExecution @relation(fields: [workflowExecutionId], references: [id], onDelete: Cascade)
+
+  @@index([workflowExecutionId])
+  @@index([status])
+  @@index([agentType])
+  @@index([startedAt])
+  @@map("workflow_tasks")
+}
+
+model AgentHealthCheck {
+  id           String    @id @default(cuid())
+  agentType    AgentType
+  healthy      Boolean
+  responseTime Int?      // Response time in milliseconds
+  metadata     Json?     // Additional health check data
+  error        String?   // Error message if unhealthy
+  checkedAt    DateTime  @default(now())
+  businessId   String?
+
+  // Relations
+  business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([agentType])
+  @@index([healthy])
+  @@index([checkedAt])
+  @@index([businessId])
+  @@index([agentType, healthy])
+  @@map("agent_health_checks")
+}
+
+model SystemMetrics {
+  id            String   @id @default(cuid())
+  metricType    String   // cpu_usage, memory_usage, response_time, queue_size
+  value         Float
+  unit          String   // percentage, ms, count
+  metadata      Json?    // Additional metric data
+  recordedAt    DateTime @default(now())
+
+  @@index([metricType])
+  @@index([recordedAt])
+  @@map("system_metrics")
+}
+
+model QueueJob {
+  id          String    @id @default(cuid())
+  queueName   String    // onboarding, content_generation, seo_analysis
+  jobType     String    // specific job type within queue
+  priority    Int       @default(0)
+  data        Json      // Job payload
+  status      String    // pending, active, completed, failed, delayed
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  error       String?   // Error message if failed
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  businessId  String?
+
+  @@index([queueName])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([businessId])
+  @@map("queue_jobs")
+}

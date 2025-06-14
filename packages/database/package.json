@@ -1,0 +1,28 @@
+{
+  "name": "@zenith/database",
+  "version": "1.0.0",
+  "description": "Zenith Platform Database Layer",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist node_modules",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx src/seed.ts",
+    "db:reset": "prisma migrate reset --force && npm run db:seed"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.20.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.20.0",
+    "typescript": "^5.8.3",
+    "tsx": "^4.0.0",
+    "@types/node": "^20.0.0"
+  }
+}

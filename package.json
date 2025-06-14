@@ -1,0 +1,63 @@
+{
+  "name": "zenith-platform",
+  "version": "1.0.0",
+  "description": "Universal Business Website Automation Platform",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "dev:frontend": "npm run dev --workspace=@zenith/frontend",
+    "dev:backend": "npm run dev --workspace=@zenith/backend",
+    "dev:agents": "npm run dev --workspace=@zenith/agents",
+    "db:generate": "npm run db:generate --workspace=@zenith/database",
+    "db:push": "npm run db:push --workspace=@zenith/database",
+    "db:migrate": "npm run db:migrate --workspace=@zenith/database",
+    "db:studio": "npm run db:studio --workspace=@zenith/database",
+    "db:seed": "npm run db:seed --workspace=@zenith/database",
+    "setup": "./scripts/setup.sh",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build",
+    "docker:clean": "docker-compose down -v && docker system prune -f",
+    "stack:dev": "docker-compose up -d postgres redis && npm run dev",
+    "stack:full": "docker-compose up -d"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.8.3",
+    "concurrently": "^8.2.0"
+  },
+  "dependencies": {
+    "axios": "^1.7.0"
+  },
+  "engines": {
+    "node": ">=22.16.0",
+    "npm": ">=10.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CleanExpo/Zenith.git"
+  },
+  "keywords": [
+    "automation",
+    "business",
+    "website",
+    "seo",
+    "ai",
+    "agents",
+    "saas",
+    "local-business",
+    "digital-marketing"
+  ],
+  "author": "Zenith Platform Team",
+  "license": "MIT"
+}
